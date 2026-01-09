@@ -1,0 +1,100 @@
+name: Sync Upstream
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # Daily at 6 AM UTC
+  workflow_dispatch:      # Manual trigger
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Add upstream remote
+        run: git remote add upstream https://github.com/badlogic/pi-mono.git
+
+      - name: Fetch upstream
+        run: git fetch upstream main
+
+      - name: Check if up-to-date
+        id: check
+        run: |
+          UPSTREAM_COMMITS=$(git rev-list HEAD..upstream/main --count)
+          echo "upstream_commits=$UPSTREAM_COMMITS" >> $GITHUB_OUTPUT
+          if [ "$UPSTREAM_COMMITS" -eq 0 ]; then
+            echo "Already up-to-date with upstream"
+          else
+            echo "Found $UPSTREAM_COMMITS new commit(s) from upstream"
+          fi
+
+      - name: Attempt merge
+        id: merge
+        if: steps.check.outputs.upstream_commits != '0'
+        run: |
+          if git merge upstream/main --no-edit; then
+            echo "merge_status=success" >> $GITHUB_OUTPUT
+          else
+            echo "merge_status=conflict" >> $GITHUB_OUTPUT
+            git merge --abort
+          fi
+
+      - name: Push if merge succeeded
+        if: steps.merge.outputs.merge_status == 'success'
+        run: git push origin main
+
+      - name: Create PR if conflicts
+        if: steps.merge.outputs.merge_status == 'conflict'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH_NAME="sync-upstream-$(date +%Y%m%d-%H%M%S)"
+          git checkout -b "$BRANCH_NAME"
+          git merge upstream/main --no-edit || true
+
+          # Get list of conflicted files
+          CONFLICTS=$(git diff --name-only --diff-filter=U)
+
+          # Stage everything and commit with conflict markers
+          git add -A
+          git commit -m "Sync upstream (conflicts need resolution)" || true
+          git push origin "$BRANCH_NAME"
+
+          # Get upstream commit log for PR body
+          COMMIT_LOG=$(git log HEAD..upstream/main --oneline | head -20)
+
+          gh pr create \
+            --title "Sync upstream changes (conflicts need resolution)" \
+            --body "$(cat <<EOF
+          ## Upstream Sync
+
+          This PR contains new commits from [badlogic/pi-mono](https://github.com/badlogic/pi-mono).
+
+          **Action required:** Merge conflicts need to be resolved manually.
+
+          ### Conflicted files
+          \`\`\`
+          $CONFLICTS
+          \`\`\`
+
+          ### New commits from upstream
+          \`\`\`
+          $COMMIT_LOG
+          \`\`\`
+          EOF
+          )" \
+            --base main \
+            --head "$BRANCH_NAME"
