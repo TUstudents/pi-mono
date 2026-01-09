@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [0.42.0] - 2026-01-09
+
+### Added
+
+- Added OpenCode Zen provider support with 26 models (Claude, GPT, Gemini, Grok, Kimi, GLM, Qwen, etc.). Set `OPENCODE_API_KEY` env var to use.
+
+## [0.41.0] - 2026-01-09
+
+## [0.40.1] - 2026-01-09
+
 ## [0.40.0] - 2026-01-08
 
 ## [0.39.1] - 2026-01-08

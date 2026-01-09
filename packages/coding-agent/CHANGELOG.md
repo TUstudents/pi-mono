@@ -2,6 +2,28 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Symlinked directories in `prompts/` folders are now followed when loading prompt templates ([#601](https://github.com/badlogic/pi-mono/pull/601) by [@aliou](https://github.com/aliou))
+
+## [0.42.0] - 2026-01-09
+
+### Added
+
+- Added OpenCode Zen provider support. Set `OPENCODE_API_KEY` env var and use `opencode/<model-id>` (e.g., `opencode/claude-opus-4-5`).
+
+## [0.41.0] - 2026-01-09
+
+### Added
+
+- Anthropic OAuth support is back! Use `/login` to authenticate with your Claude Pro/Max subscription.
+
+## [0.40.1] - 2026-01-09
+
+### Removed
+
+- Anthropic OAuth support (`/login`). Use API keys instead.
+
 ## [0.40.0] - 2026-01-08
 
 ### Added
