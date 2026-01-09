@@ -15,7 +15,7 @@
 			"@sinclair/typebox": ["./node_modules/@sinclair/typebox"],
 			"@cargo-cult/pi-mom": ["./packages/mom/src/index.ts"],
 			"@cargo-cult/pi-mom/*": ["./packages/mom/src/*"],
-			"@mariozechner/pi": ["./packages/pods/src/index.ts"],
+			"@cargo-cult/pi": ["./packages/pods/src/index.ts"],
 			"@mariozechner/pi/*": ["./packages/pods/src/*"],
 			"@cargo-cult/pi-tui": ["./packages/tui/src/index.ts"],
 			"@cargo-cult/pi-tui/*": ["./packages/tui/src/*"],

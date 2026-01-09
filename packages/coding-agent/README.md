@@ -6,7 +6,7 @@
 <p align="center">
   <a href="https://discord.com/invite/nKXTsAcmbT"><img alt="Discord" src="https://img.shields.io/badge/discord-community-5865F2?style=flat-square&logo=discord&logoColor=white" /></a>
   <a href="https://www.npmjs.com/package/@cargo-cult/pi-coding-agent"><img alt="npm" src="https://img.shields.io/npm/v/@cargo-cult/pi-coding-agent?style=flat-square" /></a>
-  <a href="https://github.com/badlogic/pi-mono/actions/workflows/ci.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/badlogic/pi-mono/ci.yml?style=flat-square&branch=main" /></a>
+  <a href="https://github.com/TUstudents/pi-mono/actions/workflows/ci.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/TUstudents/pi-mono/ci.yml?style=flat-square&branch=main" /></a>
 </p>
 
 A terminal-based coding agent with multi-model support, mid-session model switching, and a simple CLI for headless coding tasks.
@@ -66,7 +66,7 @@ npm install -g @cargo-cult/pi-coding-agent
 
 **Standalone binary:**
 
-Download from [GitHub Releases](https://github.com/badlogic/pi-mono/releases):
+Download from [GitHub Releases](https://github.com/TUstudents/pi-mono/releases):
 
 | Platform | Archive |
 |----------|---------|
@@ -91,7 +91,7 @@ pi.exe
 **Build from source** (requires [Bun](https://bun.sh) 1.0+):
 
 ```bash
-git clone https://github.com/badlogic/pi-mono.git
+git clone https://github.com/TUstudents/pi-mono.git
 cd pi-mono && npm install
 cd packages/coding-agent && npm run build:binary
 ./dist/pi
