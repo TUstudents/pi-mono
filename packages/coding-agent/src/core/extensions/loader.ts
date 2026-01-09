@@ -7,7 +7,7 @@ import { createRequire } from "node:module";
 import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import type { KeyId } from "@mariozechner/pi-tui";
+import type { KeyId } from "@cargo-cult/pi-tui";
 import { createJiti } from "jiti";
 import { getAgentDir, isBunBinary } from "../../config.js";
 import { createEventBus, type EventBus } from "../event-bus.js";
@@ -37,10 +37,10 @@ function getAliases(): Record<string, string> {
 	const typeboxRoot = typeboxEntry.replace(/\/build\/cjs\/index\.js$/, "");
 
 	_aliases = {
-		"@mariozechner/pi-coding-agent": packageIndex,
-		"@mariozechner/pi-coding-agent/extensions": path.resolve(__dirname, "index.js"),
-		"@mariozechner/pi-tui": require.resolve("@mariozechner/pi-tui"),
-		"@mariozechner/pi-ai": require.resolve("@mariozechner/pi-ai"),
+		"@cargo-cult/pi-coding-agent": packageIndex,
+		"@cargo-cult/pi-coding-agent/extensions": path.resolve(__dirname, "index.js"),
+		"@cargo-cult/pi-tui": require.resolve("@cargo-cult/pi-tui"),
+		"@cargo-cult/pi-ai": require.resolve("@cargo-cult/pi-ai"),
 		"@sinclair/typebox": typeboxRoot,
 	};
 	return _aliases;

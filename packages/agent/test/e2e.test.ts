@@ -1,5 +1,5 @@
-import type { AssistantMessage, Model, ToolResultMessage, UserMessage } from "@mariozechner/pi-ai";
-import { getModel } from "@mariozechner/pi-ai";
+import type { AssistantMessage, Model, ToolResultMessage, UserMessage } from "@cargo-cult/pi-ai";
+import { getModel } from "@cargo-cult/pi-ai";
 import { describe, expect, it } from "vitest";
 import { Agent } from "../src/index.js";
 import { calculateTool } from "./utils/calculate.js";

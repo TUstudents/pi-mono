@@ -10,7 +10,7 @@
  * - MomSettingsManager: Simple settings for mom (compaction, retry, model preferences)
  */
 
-import type { AgentMessage } from "@mariozechner/pi-agent-core";
+import type { AgentMessage } from "@cargo-cult/pi-agent-core";
 import {
 	buildSessionContext,
 	type CompactionEntry,
@@ -21,7 +21,7 @@ import {
 	type SessionEntryBase,
 	type SessionMessageEntry,
 	type ThinkingLevelChangeEntry,
-} from "@mariozechner/pi-coding-agent";
+} from "@cargo-cult/pi-coding-agent";
 import { randomBytes } from "crypto";
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { dirname, join } from "path";

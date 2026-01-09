@@ -1,4 +1,4 @@
-# @mariozechner/pi-ai
+# @cargo-cult/pi-ai
 
 Unified LLM API with automatic model discovery, provider configuration, token and cost tracking, and simple context persistence and hand-off to other models mid-session.
 
@@ -64,13 +64,13 @@ Unified LLM API with automatic model discovery, provider configuration, token an
 ## Installation
 
 ```bash
-npm install @mariozechner/pi-ai
+npm install @cargo-cult/pi-ai
 ```
 
 ## Quick Start
 
 ```typescript
-import { Type, getModel, stream, complete, Context, Tool, StringEnum } from '@mariozechner/pi-ai';
+import { Type, getModel, stream, complete, Context, Tool, StringEnum } from '@cargo-cult/pi-ai';
 
 // Fully typed with auto-complete support for both providers and models
 const model = getModel('openai', 'gpt-4o-mini');
@@ -196,7 +196,7 @@ Tools enable LLMs to interact with external systems. This library uses TypeBox s
 ### Defining Tools
 
 ```typescript
-import { Type, Tool, StringEnum } from '@mariozechner/pi-ai';
+import { Type, Tool, StringEnum } from '@cargo-cult/pi-ai';
 
 // Define tool parameters with TypeBox
 const weatherTool: Tool = {
@@ -322,7 +322,7 @@ When using `agentLoop`, tool arguments are automatically validated against your 
 When implementing your own tool execution loop with `stream()` or `complete()`, use `validateToolCall` to validate arguments before passing them to your tools:
 
 ```typescript
-import { stream, validateToolCall, Tool } from '@mariozechner/pi-ai';
+import { stream, validateToolCall, Tool } from '@cargo-cult/pi-ai';
 
 const tools: Tool[] = [weatherTool, calculatorTool];
 const s = stream(model, { messages, tools });
@@ -376,7 +376,7 @@ Models with vision capabilities can process images. You can check if a model sup
 
 ```typescript
 import { readFileSync } from 'fs';
-import { getModel, complete } from '@mariozechner/pi-ai';
+import { getModel, complete } from '@cargo-cult/pi-ai';
 
 const model = getModel('openai', 'gpt-4o-mini');
 
@@ -413,7 +413,7 @@ Many models support thinking/reasoning capabilities where they can show their in
 ### Unified Interface (streamSimple/completeSimple)
 
 ```typescript
-import { getModel, streamSimple, completeSimple } from '@mariozechner/pi-ai';
+import { getModel, streamSimple, completeSimple } from '@cargo-cult/pi-ai';
 
 // Many models across providers support thinking/reasoning
 const model = getModel('anthropic', 'claude-sonnet-4-20250514');
@@ -451,7 +451,7 @@ for (const block of response.content) {
 For fine-grained control, use the provider-specific options:
 
 ```typescript
-import { getModel, complete } from '@mariozechner/pi-ai';
+import { getModel, complete } from '@cargo-cult/pi-ai';
 
 // OpenAI Reasoning (o1, o3, gpt-5)
 const openaiModel = getModel('openai', 'gpt-5-mini');
@@ -538,7 +538,7 @@ if (message.stopReason === 'error' || message.stopReason === 'aborted') {
 The abort signal allows you to cancel in-progress requests. Aborted requests have `stopReason === 'aborted'`:
 
 ```typescript
-import { getModel, stream } from '@mariozechner/pi-ai';
+import { getModel, stream } from '@cargo-cult/pi-ai';
 
 const model = getModel('openai', 'gpt-4o-mini');
 const controller = new AbortController();
@@ -615,7 +615,7 @@ A **provider** offers models through a specific API. For example:
 ### Querying Providers and Models
 
 ```typescript
-import { getProviders, getModels, getModel } from '@mariozechner/pi-ai';
+import { getProviders, getModels, getModel } from '@cargo-cult/pi-ai';
 
 // Get all available providers
 const providers = getProviders();
@@ -641,7 +641,7 @@ console.log(`Using ${model.name} via ${model.api} API`);
 You can create custom models for local inference servers or custom endpoints:
 
 ```typescript
-import { Model, stream } from '@mariozechner/pi-ai';
+import { Model, stream } from '@cargo-cult/pi-ai';
 
 // Example: Ollama using OpenAI-compatible API
 const ollamaModel: Model<'openai-completions'> = {
@@ -749,7 +749,7 @@ When messages from one provider are sent to a different provider, the library au
 ### Example: Multi-Provider Conversation
 
 ```typescript
-import { getModel, complete, Context } from '@mariozechner/pi-ai';
+import { getModel, complete, Context } from '@cargo-cult/pi-ai';
 
 // Start with Claude
 const claude = getModel('anthropic', 'claude-sonnet-4-20250514');
@@ -794,7 +794,7 @@ This enables flexible workflows where you can:
 The `Context` object can be easily serialized and deserialized using standard JSON methods, making it simple to persist conversations, implement chat history, or transfer contexts between services:
 
 ```typescript
-import { Context, getModel, complete } from '@mariozechner/pi-ai';
+import { Context, getModel, complete } from '@cargo-cult/pi-ai';
 
 // Create and use a context
 const context: Context = {
@@ -831,7 +831,7 @@ const continuation = await complete(newModel, restored);
 The library supports browser environments. You must pass the API key explicitly since environment variables are not available in browsers:
 
 ```typescript
-import { getModel, complete } from '@mariozechner/pi-ai';
+import { getModel, complete } from '@cargo-cult/pi-ai';
 
 // API key must be passed explicitly in browser
 const model = getModel('anthropic', 'claude-3-5-haiku-20241022');
@@ -879,7 +879,7 @@ const response = await complete(model, context, {
 ### Checking Environment Variables
 
 ```typescript
-import { getEnvApiKey } from '@mariozechner/pi-ai';
+import { getEnvApiKey } from '@cargo-cult/pi-ai';
 
 // Check if an API key is set in environment variables
 const key = getEnvApiKey('openai');  // checks OPENAI_API_KEY
@@ -904,9 +904,9 @@ Vertex AI models use Application Default Credentials. Run `gcloud auth applicati
 The quickest way to authenticate:
 
 ```bash
-npx @mariozechner/pi-ai login              # interactive provider selection
-npx @mariozechner/pi-ai login anthropic    # login to specific provider
-npx @mariozechner/pi-ai list               # list available providers
+npx @cargo-cult/pi-ai login              # interactive provider selection
+npx @cargo-cult/pi-ai login anthropic    # login to specific provider
+npx @cargo-cult/pi-ai list               # list available providers
 ```
 
 Credentials are saved to `auth.json` in the current directory.
@@ -931,13 +931,13 @@ import {
   // Types
   type OAuthProvider,  // 'anthropic' | 'openai-codex' | 'github-copilot' | 'google-gemini-cli' | 'google-antigravity'
   type OAuthCredentials,
-} from '@mariozechner/pi-ai';
+} from '@cargo-cult/pi-ai';
 ```
 
 ### Login Flow Example
 
 ```typescript
-import { loginGitHubCopilot } from '@mariozechner/pi-ai';
+import { loginGitHubCopilot } from '@cargo-cult/pi-ai';
 import { writeFileSync } from 'fs';
 
 const credentials = await loginGitHubCopilot({
@@ -961,7 +961,7 @@ writeFileSync('auth.json', JSON.stringify(auth, null, 2));
 Use `getOAuthApiKey()` to get an API key, automatically refreshing if expired:
 
 ```typescript
-import { getModel, complete, getOAuthApiKey } from '@mariozechner/pi-ai';
+import { getModel, complete, getOAuthApiKey } from '@cargo-cult/pi-ai';
 import { readFileSync, writeFileSync } from 'fs';
 
 // Load your stored credentials

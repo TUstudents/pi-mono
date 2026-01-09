@@ -22,7 +22,7 @@ export {
 } from "./truncate.js";
 export { createWriteTool, type WriteOperations, type WriteToolOptions, writeTool } from "./write.js";
 
-import type { AgentTool } from "@mariozechner/pi-agent-core";
+import type { AgentTool } from "@cargo-cult/pi-agent-core";
 import { bashTool, createBashTool } from "./bash.js";
 import { createEditTool, editTool } from "./edit.js";
 import { createFindTool, findTool } from "./find.js";

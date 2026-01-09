@@ -1,5 +1,5 @@
-import { Agent, type AgentEvent } from "@mariozechner/pi-agent-core";
-import { getModel, type ImageContent } from "@mariozechner/pi-ai";
+import { Agent, type AgentEvent } from "@cargo-cult/pi-agent-core";
+import { getModel, type ImageContent } from "@cargo-cult/pi-ai";
 import {
 	AgentSession,
 	AuthStorage,
@@ -8,7 +8,7 @@ import {
 	loadSkillsFromDir,
 	ModelRegistry,
 	type Skill,
-} from "@mariozechner/pi-coding-agent";
+} from "@cargo-cult/pi-coding-agent";
 import { existsSync, readFileSync } from "fs";
 import { mkdir, writeFile } from "fs/promises";
 import { homedir } from "os";

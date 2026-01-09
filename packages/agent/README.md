@@ -1,18 +1,18 @@
-# @mariozechner/pi-agent
+# @cargo-cult/pi-agent
 
-Stateful agent with tool execution and event streaming. Built on `@mariozechner/pi-ai`.
+Stateful agent with tool execution and event streaming. Built on `@cargo-cult/pi-ai`.
 
 ## Installation
 
 ```bash
-npm install @mariozechner/pi-agent
+npm install @cargo-cult/pi-agent
 ```
 
 ## Quick Start
 
 ```typescript
-import { Agent } from "@mariozechner/pi-agent";
-import { getModel } from "@mariozechner/pi-ai";
+import { Agent } from "@cargo-cult/pi-agent";
+import { getModel } from "@cargo-cult/pi-ai";
 
 const agent = new Agent({
   initialState: {
@@ -247,7 +247,7 @@ When queued messages are detected after a tool completes:
 Extend `AgentMessage` via declaration merging:
 
 ```typescript
-declare module "@mariozechner/pi-agent" {
+declare module "@cargo-cult/pi-agent" {
   interface CustomAgentMessages {
     notification: { role: "notification"; text: string; timestamp: number };
   }
@@ -319,7 +319,7 @@ Thrown errors are caught by the agent and reported to the LLM as tool errors wit
 For browser apps that proxy through a backend:
 
 ```typescript
-import { Agent, streamProxy } from "@mariozechner/pi-agent";
+import { Agent, streamProxy } from "@cargo-cult/pi-agent";
 
 const agent = new Agent({
   streamFn: (model, context, options) =>
@@ -336,7 +336,7 @@ const agent = new Agent({
 For direct control without the Agent class:
 
 ```typescript
-import { agentLoop, agentLoopContinue } from "@mariozechner/pi-agent";
+import { agentLoop, agentLoopContinue } from "@cargo-cult/pi-agent";
 
 const context: AgentContext = {
   systemPrompt: "You are helpful.",

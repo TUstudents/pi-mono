@@ -1,4 +1,4 @@
-import { Editor, type EditorTheme, matchesKey } from "@mariozechner/pi-tui";
+import { Editor, type EditorTheme, matchesKey } from "@cargo-cult/pi-tui";
 import type { AppAction, KeybindingsManager } from "../../../core/keybindings.js";
 
 /**

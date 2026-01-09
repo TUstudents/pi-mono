@@ -13,16 +13,9 @@
  * Modes use this class and add their own I/O layer on top.
  */
 
-import type {
-	Agent,
-	AgentEvent,
-	AgentMessage,
-	AgentState,
-	AgentTool,
-	ThinkingLevel,
-} from "@mariozechner/pi-agent-core";
-import type { AssistantMessage, ImageContent, Message, Model, TextContent } from "@mariozechner/pi-ai";
-import { isContextOverflow, modelsAreEqual, supportsXhigh } from "@mariozechner/pi-ai";
+import type { Agent, AgentEvent, AgentMessage, AgentState, AgentTool, ThinkingLevel } from "@cargo-cult/pi-agent-core";
+import type { AssistantMessage, ImageContent, Message, Model, TextContent } from "@cargo-cult/pi-ai";
+import { isContextOverflow, modelsAreEqual, supportsXhigh } from "@cargo-cult/pi-ai";
 import { getAuthPath } from "../config.js";
 import { type BashResult, executeBash as executeBashCommand, executeBashWithOperations } from "./bash-executor.js";
 import {

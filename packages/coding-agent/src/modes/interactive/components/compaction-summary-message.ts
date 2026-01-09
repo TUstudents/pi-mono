@@ -1,4 +1,4 @@
-import { Box, Markdown, Spacer, Text } from "@mariozechner/pi-tui";
+import { Box, Markdown, Spacer, Text } from "@cargo-cult/pi-tui";
 import type { CompactionSummaryMessage } from "../../../core/messages.js";
 import { getMarkdownTheme, theme } from "../theme/theme.js";
 

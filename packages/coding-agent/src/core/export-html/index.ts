@@ -1,5 +1,5 @@
-import type { AgentState, AgentTool } from "@mariozechner/pi-agent-core";
-import { buildCodexPiBridge, getCodexInstructions } from "@mariozechner/pi-ai";
+import type { AgentState, AgentTool } from "@cargo-cult/pi-agent-core";
+import { buildCodexPiBridge, getCodexInstructions } from "@cargo-cult/pi-ai";
 import { existsSync, readFileSync, writeFileSync } from "fs";
 import { basename, join } from "path";
 import { APP_NAME, getExportTemplateDir } from "../../config.js";

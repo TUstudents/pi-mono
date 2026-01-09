@@ -7,15 +7,15 @@ import * as crypto from "node:crypto";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import type { AgentMessage } from "@mariozechner/pi-agent-core";
+import type { AgentMessage } from "@cargo-cult/pi-agent-core";
 import {
 	type AssistantMessage,
 	getOAuthProviders,
 	type ImageContent,
 	type Message,
 	type OAuthProvider,
-} from "@mariozechner/pi-ai";
-import type { EditorComponent, EditorTheme, KeyId, SlashCommand } from "@mariozechner/pi-tui";
+} from "@cargo-cult/pi-ai";
+import type { EditorComponent, EditorTheme, KeyId, SlashCommand } from "@cargo-cult/pi-tui";
 import {
 	CombinedAutocompleteProvider,
 	type Component,
@@ -30,7 +30,7 @@ import {
 	TruncatedText,
 	TUI,
 	visibleWidth,
-} from "@mariozechner/pi-tui";
+} from "@cargo-cult/pi-tui";
 import { spawn, spawnSync } from "child_process";
 import { APP_NAME, getAuthPath, getDebugLogPath, isBunBinary, VERSION } from "../../config.js";
 import type { AgentSession, AgentSessionEvent } from "../../core/agent-session.js";
@@ -501,7 +501,7 @@ export class InteractiveMode {
 		if (process.env.PI_SKIP_VERSION_CHECK) return undefined;
 
 		try {
-			const response = await fetch("https://registry.npmjs.org/@mariozechner/pi-coding-agent/latest");
+			const response = await fetch("https://registry.npmjs.org/@cargo-cult/pi-coding-agent/latest");
 			if (!response.ok) return undefined;
 
 			const data = (await response.json()) as { version?: string };
@@ -2219,7 +2219,7 @@ export class InteractiveMode {
 			? theme.fg("muted", `New version ${newVersion} is available. Download from: `) +
 				theme.fg("accent", "https://github.com/badlogic/pi-mono/releases/latest")
 			: theme.fg("muted", `New version ${newVersion} is available. Run: `) +
-				theme.fg("accent", "npm install -g @mariozechner/pi-coding-agent");
+				theme.fg("accent", "npm install -g @cargo-cult/pi-coding-agent");
 
 		this.chatContainer.addChild(new Spacer(1));
 		this.chatContainer.addChild(new DynamicBorder((text) => theme.fg("warning", text)));

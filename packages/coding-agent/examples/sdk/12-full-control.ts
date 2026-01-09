@@ -8,7 +8,7 @@
  * paths relative to your cwd.
  */
 
-import { getModel } from "@mariozechner/pi-ai";
+import { getModel } from "@cargo-cult/pi-ai";
 import {
 	AuthStorage,
 	createAgentSession,
@@ -17,7 +17,7 @@ import {
 	ModelRegistry,
 	SessionManager,
 	SettingsManager,
-} from "@mariozechner/pi-coding-agent";
+} from "@cargo-cult/pi-coding-agent";
 
 // Custom auth storage location
 const authStorage = new AuthStorage("/tmp/my-agent/auth.json");

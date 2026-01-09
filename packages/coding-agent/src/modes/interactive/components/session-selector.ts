@@ -6,7 +6,7 @@ import {
 	Spacer,
 	Text,
 	truncateToWidth,
-} from "@mariozechner/pi-tui";
+} from "@cargo-cult/pi-tui";
 import type { SessionInfo } from "../../../core/session-manager.js";
 import { fuzzyFilter } from "../../../utils/fuzzy.js";
 import { theme } from "../theme/theme.js";

@@ -1,5 +1,5 @@
-import { getOAuthProviders } from "@mariozechner/pi-ai";
-import { Container, getEditorKeybindings, Input, Spacer, Text, type TUI } from "@mariozechner/pi-tui";
+import { getOAuthProviders } from "@cargo-cult/pi-ai";
+import { Container, getEditorKeybindings, Input, Spacer, Text, type TUI } from "@cargo-cult/pi-tui";
 import { exec } from "child_process";
 import { theme } from "../theme/theme.js";
 import { DynamicBorder } from "./dynamic-border.js";

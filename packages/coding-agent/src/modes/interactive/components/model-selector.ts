@@ -1,5 +1,5 @@
-import { type Model, modelsAreEqual } from "@mariozechner/pi-ai";
-import { Container, getEditorKeybindings, Input, Spacer, Text, type TUI } from "@mariozechner/pi-tui";
+import { type Model, modelsAreEqual } from "@cargo-cult/pi-ai";
+import { Container, getEditorKeybindings, Input, Spacer, Text, type TUI } from "@cargo-cult/pi-tui";
 import type { ModelRegistry } from "../../../core/model-registry.js";
 import type { SettingsManager } from "../../../core/settings-manager.js";
 import { fuzzyFilter } from "../../../utils/fuzzy.js";

@@ -5,7 +5,7 @@
 </p>
 <p align="center">
   <a href="https://discord.com/invite/nKXTsAcmbT"><img alt="Discord" src="https://img.shields.io/badge/discord-community-5865F2?style=flat-square&logo=discord&logoColor=white" /></a>
-  <a href="https://www.npmjs.com/package/@mariozechner/pi-coding-agent"><img alt="npm" src="https://img.shields.io/npm/v/@mariozechner/pi-coding-agent?style=flat-square" /></a>
+  <a href="https://www.npmjs.com/package/@cargo-cult/pi-coding-agent"><img alt="npm" src="https://img.shields.io/npm/v/@cargo-cult/pi-coding-agent?style=flat-square" /></a>
   <a href="https://github.com/badlogic/pi-mono/actions/workflows/ci.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/badlogic/pi-mono/ci.yml?style=flat-square&branch=main" /></a>
 </p>
 
@@ -61,7 +61,7 @@ Works on Linux, macOS, and Windows (requires bash; see [Windows Setup](#windows-
 **npm (recommended):**
 
 ```bash
-npm install -g @mariozechner/pi-coding-agent
+npm install -g @cargo-cult/pi-coding-agent
 ```
 
 **Standalone binary:**
@@ -748,7 +748,7 @@ Select theme via `/settings` or set in `~/.pi/agent/settings.json`.
 
 ```bash
 mkdir -p ~/.pi/agent/themes
-cp $(npm root -g)/@mariozechner/pi-coding-agent/dist/theme/dark.json ~/.pi/agent/themes/my-theme.json
+cp $(npm root -g)/@cargo-cult/pi-coding-agent/dist/theme/dark.json ~/.pi/agent/themes/my-theme.json
 ```
 
 Select with `/settings`, then edit the file. Changes apply on save.
@@ -868,9 +868,9 @@ Extensions are TypeScript modules that extend pi's behavior.
 Tools are functions the LLM can call. They appear in the system prompt and can have custom rendering.
 
 ```typescript
-import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
+import type { ExtensionAPI } from "@cargo-cult/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
-import { Text } from "@mariozechner/pi-tui";
+import { Text } from "@cargo-cult/pi-tui";
 
 export default function (pi: ExtensionAPI) {
   pi.registerTool({
@@ -1230,7 +1230,7 @@ For adding new tools, see [Extensions](#extensions) in the Customization section
 For embedding pi in Node.js/TypeScript applications, use the SDK:
 
 ```typescript
-import { createAgentSession, discoverAuthStorage, discoverModels, SessionManager } from "@mariozechner/pi-coding-agent";
+import { createAgentSession, discoverAuthStorage, discoverModels, SessionManager } from "@cargo-cult/pi-coding-agent";
 
 const authStorage = discoverAuthStorage();
 const modelRegistry = discoverModels(authStorage);
@@ -1352,6 +1352,6 @@ MIT
 
 ## See Also
 
-- [@mariozechner/pi-ai](https://www.npmjs.com/package/@mariozechner/pi-ai): Core LLM toolkit
-- [@mariozechner/pi-agent](https://www.npmjs.com/package/@mariozechner/pi-agent): Agent framework
-- [@mariozechner/pi-tui](https://www.npmjs.com/package/@mariozechner/pi-tui): Terminal UI components
+- [@cargo-cult/pi-ai](https://www.npmjs.com/package/@cargo-cult/pi-ai): Core LLM toolkit
+- [@cargo-cult/pi-agent](https://www.npmjs.com/package/@cargo-cult/pi-agent): Agent framework
+- [@cargo-cult/pi-tui](https://www.npmjs.com/package/@cargo-cult/pi-tui): Terminal UI components

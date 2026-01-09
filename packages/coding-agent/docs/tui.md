@@ -4,7 +4,7 @@
 
 Hooks and custom tools can render custom TUI components for interactive user interfaces. This page covers the component system and available building blocks.
 
-**Source:** [`@mariozechner/pi-tui`](https://github.com/badlogic/pi-mono/tree/main/packages/tui)
+**Source:** [`@cargo-cult/pi-tui`](https://github.com/badlogic/pi-mono/tree/main/packages/tui)
 
 ## Component Interface
 
@@ -48,10 +48,10 @@ async execute(toolCallId, params, onUpdate, ctx, signal) {
 
 ## Built-in Components
 
-Import from `@mariozechner/pi-tui`:
+Import from `@cargo-cult/pi-tui`:
 
 ```typescript
-import { Text, Box, Container, Spacer, Markdown } from "@mariozechner/pi-tui";
+import { Text, Box, Container, Spacer, Markdown } from "@cargo-cult/pi-tui";
 ```
 
 ### Text
@@ -133,7 +133,7 @@ const image = new Image(
 Use `matchesKey()` for key detection:
 
 ```typescript
-import { matchesKey, Key } from "@mariozechner/pi-tui";
+import { matchesKey, Key } from "@cargo-cult/pi-tui";
 
 handleInput(data: string) {
   if (matchesKey(data, Key.up)) {
@@ -159,7 +159,7 @@ handleInput(data: string) {
 **Critical:** Each line from `render()` must not exceed the `width` parameter.
 
 ```typescript
-import { visibleWidth, truncateToWidth } from "@mariozechner/pi-tui";
+import { visibleWidth, truncateToWidth } from "@cargo-cult/pi-tui";
 
 render(width: number): string[] {
   // Truncate long lines
@@ -180,7 +180,7 @@ Example: Interactive selector
 import {
   matchesKey, Key,
   truncateToWidth, visibleWidth
-} from "@mariozechner/pi-tui";
+} from "@cargo-cult/pi-tui";
 
 class MySelector {
   private items: string[];
@@ -294,8 +294,8 @@ renderResult(result, options, theme) {
 **For Markdown**, use `getMarkdownTheme()`:
 
 ```typescript
-import { getMarkdownTheme } from "@mariozechner/pi-coding-agent";
-import { Markdown } from "@mariozechner/pi-tui";
+import { getMarkdownTheme } from "@cargo-cult/pi-coding-agent";
+import { Markdown } from "@cargo-cult/pi-tui";
 
 renderResult(result, options, theme) {
   const mdTheme = getMarkdownTheme();
@@ -448,12 +448,12 @@ These patterns cover the most common UI needs in extensions. **Copy these patter
 
 ### Pattern 1: Selection Dialog (SelectList)
 
-For letting users pick from a list of options. Use `SelectList` from `@mariozechner/pi-tui` with `DynamicBorder` for framing.
+For letting users pick from a list of options. Use `SelectList` from `@cargo-cult/pi-tui` with `DynamicBorder` for framing.
 
 ```typescript
-import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import { DynamicBorder } from "@mariozechner/pi-coding-agent";
-import { Container, type SelectItem, SelectList, Text } from "@mariozechner/pi-tui";
+import type { ExtensionAPI } from "@cargo-cult/pi-coding-agent";
+import { DynamicBorder } from "@cargo-cult/pi-coding-agent";
+import { Container, type SelectItem, SelectList, Text } from "@cargo-cult/pi-tui";
 
 pi.registerCommand("pick", {
   handler: async (_args, ctx) => {
@@ -511,7 +511,7 @@ pi.registerCommand("pick", {
 For operations that take time and should be cancellable. `BorderedLoader` shows a spinner and handles escape to cancel.
 
 ```typescript
-import { BorderedLoader } from "@mariozechner/pi-coding-agent";
+import { BorderedLoader } from "@cargo-cult/pi-coding-agent";
 
 pi.registerCommand("fetch", {
   handler: async (_args, ctx) => {
@@ -540,11 +540,11 @@ pi.registerCommand("fetch", {
 
 ### Pattern 3: Settings/Toggles (SettingsList)
 
-For toggling multiple settings. Use `SettingsList` from `@mariozechner/pi-tui` with `getSettingsListTheme()`.
+For toggling multiple settings. Use `SettingsList` from `@cargo-cult/pi-tui` with `getSettingsListTheme()`.
 
 ```typescript
-import { getSettingsListTheme } from "@mariozechner/pi-coding-agent";
-import { Container, type SettingItem, SettingsList, Text } from "@mariozechner/pi-tui";
+import { getSettingsListTheme } from "@cargo-cult/pi-coding-agent";
+import { Container, type SettingItem, SettingsList, Text } from "@cargo-cult/pi-tui";
 
 pi.registerCommand("settings", {
   handler: async (_args, ctx) => {
@@ -648,8 +648,8 @@ ctx.ui.setFooter(undefined);
 Replace the main input editor with a custom implementation. Useful for modal editing (vim), different keybindings (emacs), or specialized input handling.
 
 ```typescript
-import { CustomEditor, type ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import { matchesKey, truncateToWidth } from "@mariozechner/pi-tui";
+import { CustomEditor, type ExtensionAPI } from "@cargo-cult/pi-coding-agent";
+import { matchesKey, truncateToWidth } from "@cargo-cult/pi-tui";
 
 type Mode = "normal" | "insert";
 

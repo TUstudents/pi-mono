@@ -2,9 +2,9 @@
  * Extension runner - executes extensions and manages their lifecycle.
  */
 
-import type { AgentMessage } from "@mariozechner/pi-agent-core";
-import type { ImageContent, Model } from "@mariozechner/pi-ai";
-import type { KeyId } from "@mariozechner/pi-tui";
+import type { AgentMessage } from "@cargo-cult/pi-agent-core";
+import type { ImageContent, Model } from "@cargo-cult/pi-ai";
+import type { KeyId } from "@cargo-cult/pi-tui";
 import { type Theme, theme } from "../../modes/interactive/theme/theme.js";
 import type { ModelRegistry } from "../model-registry.js";
 import type { SessionManager } from "../session-manager.js";

@@ -1,4 +1,4 @@
-import { CancellableLoader, Container, Spacer, Text, type TUI } from "@mariozechner/pi-tui";
+import { CancellableLoader, Container, Spacer, Text, type TUI } from "@cargo-cult/pi-tui";
 import type { Theme } from "../theme/theme.js";
 import { DynamicBorder } from "./dynamic-border.js";
 

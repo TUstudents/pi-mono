@@ -5,7 +5,7 @@
  * createAgentSession() options. The SDK does the heavy lifting.
  */
 
-import { type ImageContent, supportsXhigh } from "@mariozechner/pi-ai";
+import { type ImageContent, supportsXhigh } from "@cargo-cult/pi-ai";
 import chalk from "chalk";
 import { existsSync } from "fs";
 import { join } from "path";

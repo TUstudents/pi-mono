@@ -19,8 +19,8 @@
  * 3. Or start in plan mode with --plan flag
  */
 
-import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
-import { Key } from "@mariozechner/pi-tui";
+import type { ExtensionAPI, ExtensionContext } from "@cargo-cult/pi-coding-agent";
+import { Key } from "@cargo-cult/pi-tui";
 
 // Read-only tools for plan mode
 const PLAN_MODE_TOOLS = ["read", "bash", "grep", "find", "ls"];

@@ -10,7 +10,7 @@ import {
 	type KnownProvider,
 	type Model,
 	normalizeDomain,
-} from "@mariozechner/pi-ai";
+} from "@cargo-cult/pi-ai";
 import { type Static, Type } from "@sinclair/typebox";
 import AjvModule from "ajv";
 import { existsSync, readFileSync } from "fs";

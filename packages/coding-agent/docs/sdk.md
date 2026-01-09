@@ -16,7 +16,7 @@ See [examples/sdk/](../examples/sdk/) for working examples from minimal to full 
 ## Quick Start
 
 ```typescript
-import { createAgentSession, discoverAuthStorage, discoverModels, SessionManager } from "@mariozechner/pi-coding-agent";
+import { createAgentSession, discoverAuthStorage, discoverModels, SessionManager } from "@cargo-cult/pi-coding-agent";
 
 // Set up credential storage and model registry
 const authStorage = discoverAuthStorage();
@@ -40,7 +40,7 @@ await session.prompt("What files are in the current directory?");
 ## Installation
 
 ```bash
-npm install @mariozechner/pi-coding-agent
+npm install @cargo-cult/pi-coding-agent
 ```
 
 The SDK is included in the main package. No separate installation needed.
@@ -56,7 +56,7 @@ The main factory function. Creates an `AgentSession` with configurable options.
 - Provide an option → your value is used, discovery skipped for that option
 
 ```typescript
-import { createAgentSession } from "@mariozechner/pi-coding-agent";
+import { createAgentSession } from "@cargo-cult/pi-coding-agent";
 
 // Minimal: all defaults (discovers everything from cwd and ~/.pi/agent)
 const { session } = await createAgentSession();
@@ -164,7 +164,7 @@ Both `steer()` and `followUp()` expand file-based prompt templates but error on 
 
 ### Agent and AgentState
 
-The `Agent` class (from `@mariozechner/pi-agent-core`) handles the core LLM interaction. Access it via `session.agent`.
+The `Agent` class (from `@cargo-cult/pi-agent-core`) handles the core LLM interaction. Access it via `session.agent`.
 
 ```typescript
 // Access current state
@@ -279,8 +279,8 @@ const { session } = await createAgentSession({
 ### Model
 
 ```typescript
-import { getModel } from "@mariozechner/pi-ai";
-import { discoverAuthStorage, discoverModels } from "@mariozechner/pi-coding-agent";
+import { getModel } from "@cargo-cult/pi-ai";
+import { discoverAuthStorage, discoverModels } from "@cargo-cult/pi-coding-agent";
 
 const authStorage = discoverAuthStorage();
 const modelRegistry = discoverModels(authStorage);
@@ -327,7 +327,7 @@ API key resolution priority (handled by AuthStorage):
 4. Fallback resolver (for custom provider keys from `models.json`)
 
 ```typescript
-import { AuthStorage, ModelRegistry, discoverAuthStorage, discoverModels } from "@mariozechner/pi-coding-agent";
+import { AuthStorage, ModelRegistry, discoverAuthStorage, discoverModels } from "@cargo-cult/pi-coding-agent";
 
 // Default: uses ~/.pi/agent/auth.json and ~/.pi/agent/models.json
 const authStorage = discoverAuthStorage();
@@ -382,7 +382,7 @@ import {
   readOnlyTools, // read, grep, find, ls
   readTool, bashTool, editTool, writeTool,
   grepTool, findTool, lsTool,
-} from "@mariozechner/pi-coding-agent";
+} from "@cargo-cult/pi-coding-agent";
 
 // Use built-in tool set
 const { session } = await createAgentSession({
@@ -410,7 +410,7 @@ import {
   createGrepTool,
   createFindTool,
   createLsTool,
-} from "@mariozechner/pi-coding-agent";
+} from "@cargo-cult/pi-coding-agent";
 
 const cwd = "/path/to/project";
 
@@ -440,7 +440,7 @@ const { session } = await createAgentSession({
 
 ```typescript
 import { Type } from "@sinclair/typebox";
-import { createAgentSession, type ToolDefinition } from "@mariozechner/pi-coding-agent";
+import { createAgentSession, type ToolDefinition } from "@cargo-cult/pi-coding-agent";
 
 // Inline custom tool
 const myTool: ToolDefinition = {
@@ -474,7 +474,7 @@ By default, extensions are discovered from multiple locations:
 - Paths listed in `settings.json` `"extensions"` array
 
 ```typescript
-import { createAgentSession, type ExtensionFactory } from "@mariozechner/pi-coding-agent";
+import { createAgentSession, type ExtensionFactory } from "@cargo-cult/pi-coding-agent";
 
 // Inline extension factory
 const myExtension: ExtensionFactory = (pi) => {
@@ -511,7 +511,7 @@ Extensions can register tools, subscribe to events, add commands, and more. See 
 **Event Bus:** Extensions can communicate via `pi.events`. Pass a shared `eventBus` to `createAgentSession()` if you need to emit/listen from outside:
 
 ```typescript
-import { createAgentSession, createEventBus } from "@mariozechner/pi-coding-agent";
+import { createAgentSession, createEventBus } from "@cargo-cult/pi-coding-agent";
 
 const eventBus = createEventBus();
 const { session } = await createAgentSession({ eventBus });
@@ -525,7 +525,7 @@ eventBus.on("my-extension:status", (data) => console.log(data));
 ### Skills
 
 ```typescript
-import { createAgentSession, discoverSkills, type Skill } from "@mariozechner/pi-coding-agent";
+import { createAgentSession, discoverSkills, type Skill } from "@cargo-cult/pi-coding-agent";
 
 // Discover and filter
 const { skills: allSkills, warnings } = discoverSkills();
@@ -561,7 +561,7 @@ const { skills } = discoverSkills(process.cwd(), undefined, {
 ### Context Files
 
 ```typescript
-import { createAgentSession, discoverContextFiles } from "@mariozechner/pi-coding-agent";
+import { createAgentSession, discoverContextFiles } from "@cargo-cult/pi-coding-agent";
 
 // Discover AGENTS.md files
 const discovered = discoverContextFiles();
@@ -588,7 +588,7 @@ const { session } = await createAgentSession({
 ### Slash Commands
 
 ```typescript
-import { createAgentSession, discoverPromptTemplates, type PromptTemplate } from "@mariozechner/pi-coding-agent";
+import { createAgentSession, discoverPromptTemplates, type PromptTemplate } from "@cargo-cult/pi-coding-agent";
 
 const discovered = discoverPromptTemplates();
 
@@ -611,7 +611,7 @@ const { session } = await createAgentSession({
 Sessions use a tree structure with `id`/`parentId` linking, enabling in-place branching.
 
 ```typescript
-import { createAgentSession, SessionManager } from "@mariozechner/pi-coding-agent";
+import { createAgentSession, SessionManager } from "@cargo-cult/pi-coding-agent";
 
 // In-memory (no persistence)
 const { session } = await createAgentSession({
@@ -677,7 +677,7 @@ sm.createBranchedSession(leafId);       // Extract path to new file
 ### Settings Management
 
 ```typescript
-import { createAgentSession, SettingsManager, SessionManager } from "@mariozechner/pi-coding-agent";
+import { createAgentSession, SettingsManager, SessionManager } from "@cargo-cult/pi-coding-agent";
 
 // Default: loads from files (global + project merged)
 const { session } = await createAgentSession({
@@ -723,7 +723,7 @@ Project overrides global. Nested objects merge keys. Setters only modify global 
 All discovery functions accept optional `cwd` and `agentDir` parameters.
 
 ```typescript
-import { getModel } from "@mariozechner/pi-ai";
+import { getModel } from "@cargo-cult/pi-ai";
 import {
   AuthStorage,
   ModelRegistry,
@@ -736,7 +736,7 @@ import {
   discoverPromptTemplates,
   loadSettings,
   buildSystemPrompt,
-} from "@mariozechner/pi-coding-agent";
+} from "@cargo-cult/pi-coding-agent";
 
 // Auth and Models
 const authStorage = discoverAuthStorage();           // ~/.pi/agent/auth.json
@@ -801,7 +801,7 @@ interface LoadExtensionsResult {
 ## Complete Example
 
 ```typescript
-import { getModel } from "@mariozechner/pi-ai";
+import { getModel } from "@cargo-cult/pi-ai";
 import { Type } from "@sinclair/typebox";
 import {
   AuthStorage,
@@ -813,7 +813,7 @@ import {
   bashTool,
   type HookFactory,
   type CustomTool,
-} from "@mariozechner/pi-coding-agent";
+} from "@cargo-cult/pi-coding-agent";
 
 // Set up auth storage (custom location)
 const authStorage = new AuthStorage("/custom/agent/auth.json");
@@ -895,7 +895,7 @@ The SDK exports run mode utilities for building custom interfaces on top of `cre
 Full TUI interactive mode with editor, chat history, and all built-in commands:
 
 ```typescript
-import { createAgentSession, InteractiveMode } from "@mariozechner/pi-coding-agent";
+import { createAgentSession, InteractiveMode } from "@cargo-cult/pi-coding-agent";
 
 const { session } = await createAgentSession({ /* ... */ });
 
@@ -916,7 +916,7 @@ await mode.run();  // Blocks until exit
 Single-shot mode: send prompts, output result, exit:
 
 ```typescript
-import { createAgentSession, runPrintMode } from "@mariozechner/pi-coding-agent";
+import { createAgentSession, runPrintMode } from "@cargo-cult/pi-coding-agent";
 
 const { session } = await createAgentSession({ /* ... */ });
 
@@ -933,7 +933,7 @@ await runPrintMode(session, {
 JSON-RPC mode for subprocess integration:
 
 ```typescript
-import { createAgentSession, runRpcMode } from "@mariozechner/pi-coding-agent";
+import { createAgentSession, runRpcMode } from "@cargo-cult/pi-coding-agent";
 
 const { session } = await createAgentSession({ /* ... */ });
 
@@ -1030,17 +1030,17 @@ import type {
   HookCommandContext,
   ToolCallEvent,
   ToolResultEvent,
-} from "@mariozechner/pi-coding-agent/hooks";
+} from "@cargo-cult/pi-coding-agent/hooks";
 ```
 
 For message utilities:
 
 ```typescript
-import { isHookMessage, createHookMessage } from "@mariozechner/pi-coding-agent";
+import { isHookMessage, createHookMessage } from "@cargo-cult/pi-coding-agent";
 ```
 
 For config utilities:
 
 ```typescript
-import { getAgentDir } from "@mariozechner/pi-coding-agent/config";
+import { getAgentDir } from "@cargo-cult/pi-coding-agent/config";
 ```

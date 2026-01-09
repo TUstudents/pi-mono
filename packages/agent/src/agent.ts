@@ -11,7 +11,7 @@ import {
 	streamSimple,
 	type TextContent,
 	type ThinkingBudgets,
-} from "@mariozechner/pi-ai";
+} from "@cargo-cult/pi-ai";
 import { agentLoop, agentLoopContinue } from "./agent-loop.js";
 import type {
 	AgentContext,

@@ -54,19 +54,19 @@
 
 ### Breaking Changes
 
-- **Agent class moved to `@mariozechner/pi-agent-core`**: The `Agent` class, `AgentState`, and related types are no longer exported from this package. Import them from `@mariozechner/pi-agent-core` instead.
+- **Agent class moved to `@cargo-cult/pi-agent-core`**: The `Agent` class, `AgentState`, and related types are no longer exported from this package. Import them from `@cargo-cult/pi-agent-core` instead.
 
 - **Transport abstraction removed**: `ProviderTransport`, `AppTransport`, `AgentTransport` interface, and related types have been removed. The `Agent` class now uses `streamFn` for custom streaming.
 
-- **`AppMessage` renamed to `AgentMessage`**: Now imported from `@mariozechner/pi-agent-core`. Custom message types use declaration merging on `CustomAgentMessages` interface.
+- **`AppMessage` renamed to `AgentMessage`**: Now imported from `@cargo-cult/pi-agent-core`. Custom message types use declaration merging on `CustomAgentMessages` interface.
 
 - **`UserMessageWithAttachments` is now a custom message type**: Has `role: "user-with-attachments"` instead of `role: "user"`. Use `isUserMessageWithAttachments()` type guard.
 
-- **`CustomMessages` interface removed**: Use declaration merging on `CustomAgentMessages` from `@mariozechner/pi-agent-core` instead.
+- **`CustomMessages` interface removed**: Use declaration merging on `CustomAgentMessages` from `@cargo-cult/pi-agent-core` instead.
 
 - **`agent.appendMessage()` removed**: Use `agent.queueMessage()` instead.
 
-- **Agent event types changed**: `AgentInterface` now handles new event types from `@mariozechner/pi-agent-core`: `message_start`, `message_end`, `message_update`, `turn_start`, `turn_end`, `agent_start`, `agent_end`.
+- **Agent event types changed**: `AgentInterface` now handles new event types from `@cargo-cult/pi-agent-core`: `message_start`, `message_end`, `message_update`, `turn_start`, `turn_end`, `agent_start`, `agent_end`.
 
 ### Added
 
@@ -86,7 +86,7 @@
 
 ### Removed
 
-- `Agent` class (moved to `@mariozechner/pi-agent-core`)
+- `Agent` class (moved to `@cargo-cult/pi-agent-core`)
 - `ProviderTransport` class
 - `AppTransport` class
 - `AgentTransport` interface
@@ -98,7 +98,7 @@
 
 **Before (0.30.x):**
 ```typescript
-import { Agent, ProviderTransport, type AppMessage } from '@mariozechner/pi-web-ui';
+import { Agent, ProviderTransport, type AppMessage } from '@cargo-cult/pi-web-ui';
 
 const agent = new Agent({
   transport: new ProviderTransport(),
@@ -108,8 +108,8 @@ const agent = new Agent({
 
 **After:**
 ```typescript
-import { Agent, type AgentMessage } from '@mariozechner/pi-agent-core';
-import { defaultConvertToLlm } from '@mariozechner/pi-web-ui';
+import { Agent, type AgentMessage } from '@cargo-cult/pi-agent-core';
+import { defaultConvertToLlm } from '@cargo-cult/pi-web-ui';
 
 const agent = new Agent({
   convertToLlm: (messages: AgentMessage[]) => {
@@ -123,14 +123,14 @@ const agent = new Agent({
 **Custom message types:**
 ```typescript
 // Before: declaration merging on CustomMessages
-declare module "@mariozechner/pi-web-ui" {
+declare module "@cargo-cult/pi-web-ui" {
   interface CustomMessages {
     "my-message": MyMessage;
   }
 }
 
 // After: declaration merging on CustomAgentMessages
-declare module "@mariozechner/pi-agent-core" {
+declare module "@cargo-cult/pi-agent-core" {
   interface CustomAgentMessages {
     "my-message": MyMessage;
   }

@@ -2,8 +2,8 @@
  * Question Tool - Let the LLM ask the user a question with options
  */
 
-import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import { Text } from "@mariozechner/pi-tui";
+import type { ExtensionAPI } from "@cargo-cult/pi-coding-agent";
+import { Text } from "@cargo-cult/pi-tui";
 import { Type } from "@sinclair/typebox";
 
 interface QuestionDetails {

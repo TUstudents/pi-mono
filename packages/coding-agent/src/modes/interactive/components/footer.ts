@@ -1,5 +1,5 @@
-import type { AssistantMessage } from "@mariozechner/pi-ai";
-import { type Component, truncateToWidth, visibleWidth } from "@mariozechner/pi-tui";
+import type { AssistantMessage } from "@cargo-cult/pi-ai";
+import { type Component, truncateToWidth, visibleWidth } from "@cargo-cult/pi-tui";
 import { existsSync, type FSWatcher, readFileSync, statSync, watch } from "fs";
 import { dirname, join, resolve } from "path";
 import type { AgentSession } from "../../../core/agent-session.js";
