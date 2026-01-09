@@ -47,5 +47,10 @@
 		"mini-lit"
 	],
 	"author": "Mario Zechner",
-	"license": "MIT"
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/TUstudents/pi-mono.git",
+		"directory": "packages/web-ui"
+	}
 }
