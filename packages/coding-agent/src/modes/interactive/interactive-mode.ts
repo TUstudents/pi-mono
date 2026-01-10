@@ -13,6 +13,7 @@ import {
 	getOAuthProviders,
 	type ImageContent,
 	type Message,
+	type Model,
 	type OAuthProvider,
 } from "@cargo-cult/pi-ai";
 import type { EditorComponent, EditorTheme, KeyId, SlashCommand } from "@cargo-cult/pi-tui";
@@ -40,6 +41,7 @@ import type {
 	ExtensionUIContext,
 	ExtensionUIDialogOptions,
 } from "../../core/extensions/index.js";
+import { FooterDataProvider, type ReadonlyFooterDataProvider } from "../../core/footer-data-provider.js";
 import { KeybindingsManager } from "../../core/keybindings.js";
 import { createCompactionSummaryMessage } from "../../core/messages.js";
 import { type SessionContext, SessionManager } from "../../core/session-manager.js";
@@ -127,6 +129,7 @@ export class InteractiveMode {
 	private autocompleteProvider: CombinedAutocompleteProvider | undefined;
 	private editorContainer: Container;
 	private footer: FooterComponent;
+	private footerDataProvider: FooterDataProvider;
 	private keybindings: KeybindingsManager;
 	private version: string;
 	private isInitialized = false;
@@ -225,7 +228,8 @@ export class InteractiveMode {
 		this.editor = this.defaultEditor;
 		this.editorContainer = new Container();
 		this.editorContainer.addChild(this.editor as Component);
-		this.footer = new FooterComponent(session);
+		this.footerDataProvider = new FooterDataProvider();
+		this.footer = new FooterComponent(session, this.footerDataProvider);
 		this.footer.setAutoCompactEnabled(session.autoCompactionEnabled);
 
 		// Load hide thinking block setting
@@ -311,6 +315,7 @@ export class InteractiveMode {
 		const toggleThinking = formatStartupKey(kb.getKeys("toggleThinking"));
 		const externalEditor = formatStartupKey(kb.getKeys("externalEditor"));
 		const followUp = formatStartupKey(kb.getKeys("followUp"));
+		const dequeue = formatStartupKey(kb.getKeys("dequeue"));
 
 		const instructions =
 			theme.fg("dim", interrupt) +
@@ -361,6 +366,9 @@ export class InteractiveMode {
 			theme.fg("dim", followUp) +
 			theme.fg("muted", " to queue follow-up") +
 			"\n" +
+			theme.fg("dim", dequeue) +
+			theme.fg("muted", " to restore queued messages") +
+			"\n" +
 			theme.fg("dim", "ctrl+v") +
 			theme.fg("muted", " to paste image") +
 			"\n" +
@@ -394,7 +402,6 @@ export class InteractiveMode {
 		this.ui.addChild(this.pendingMessagesContainer);
 		this.ui.addChild(this.statusContainer);
 		this.ui.addChild(this.widgetContainer);
-		this.ui.addChild(new Spacer(1));
 		this.ui.addChild(this.editorContainer);
 		this.ui.addChild(this.footer);
 		this.ui.setFocus(this.editor);
@@ -423,8 +430,8 @@ export class InteractiveMode {
 			this.ui.requestRender();
 		});
 
-		// Set up git branch watcher
-		this.footer.watchBranch(() => {
+		// Set up git branch watcher (uses provider instead of footer)
+		this.footerDataProvider.onBranchChange(() => {
 			this.ui.requestRender();
 		});
 	}
@@ -793,7 +800,7 @@ export class InteractiveMode {
 	 * Set extension status text in the footer.
 	 */
 	private setExtensionStatus(key: string, text: string | undefined): void {
-		this.footer.setExtensionStatus(key, text);
+		this.footerDataProvider.setExtensionStatus(key, text);
 		this.ui.requestRender();
 	}
 
@@ -839,10 +846,12 @@ export class InteractiveMode {
 		this.widgetContainer.clear();
 
 		if (this.extensionWidgets.size === 0) {
+			this.widgetContainer.addChild(new Spacer(1));
 			this.ui.requestRender();
 			return;
 		}
 
+		this.widgetContainer.addChild(new Spacer(1));
 		for (const [_key, component] of this.extensionWidgets) {
 			this.widgetContainer.addChild(component);
 		}
@@ -853,7 +862,11 @@ export class InteractiveMode {
 	/**
 	 * Set a custom footer component, or restore the built-in footer.
 	 */
-	private setExtensionFooter(factory: ((tui: TUI, thm: Theme) => Component & { dispose?(): void }) | undefined): void {
+	private setExtensionFooter(
+		factory:
+			| ((tui: TUI, thm: Theme, footerData: ReadonlyFooterDataProvider) => Component & { dispose?(): void })
+			| undefined,
+	): void {
 		// Dispose existing custom footer
 		if (this.customFooter?.dispose) {
 			this.customFooter.dispose();
@@ -867,8 +880,8 @@ export class InteractiveMode {
 		}
 
 		if (factory) {
-			// Create and add custom footer
-			this.customFooter = factory(this.ui, theme);
+			// Create and add custom footer, passing the data provider
+			this.customFooter = factory(this.ui, theme, this.footerDataProvider);
 			this.ui.addChild(this.customFooter);
 		} else {
 			// Restore built-in footer
@@ -1274,15 +1287,7 @@ export class InteractiveMode {
 		// so they work correctly regardless of which editor is active
 		this.defaultEditor.onEscape = () => {
 			if (this.loadingAnimation) {
-				// Abort and restore queued messages to editor
-				const { steering, followUp } = this.session.clearQueue();
-				const allQueued = [...steering, ...followUp];
-				const queuedText = allQueued.join("\n\n");
-				const currentText = this.editor.getText();
-				const combinedText = [queuedText, currentText].filter((t) => t.trim()).join("\n\n");
-				this.editor.setText(combinedText);
-				this.updatePendingMessagesDisplay();
-				this.agent.abort();
+				this.restoreQueuedMessagesToEditor({ abort: true });
 			} else if (this.session.isBashRunning) {
 				this.session.abortBash();
 			} else if (this.isBashMode) {
@@ -1320,6 +1325,7 @@ export class InteractiveMode {
 		this.defaultEditor.onAction("toggleThinking", () => this.toggleThinkingBlockVisibility());
 		this.defaultEditor.onAction("externalEditor", () => this.openExternalEditor());
 		this.defaultEditor.onAction("followUp", () => this.handleFollowUp());
+		this.defaultEditor.onAction("dequeue", () => this.handleDequeue());
 
 		this.defaultEditor.onChange = (text: string) => {
 			const wasBashMode = this.isBashMode;
@@ -1368,9 +1374,10 @@ export class InteractiveMode {
 				this.editor.setText("");
 				return;
 			}
-			if (text === "/model") {
-				this.showModelSelector();
+			if (text === "/model" || text.startsWith("/model ")) {
+				const searchTerm = text.startsWith("/model ") ? text.slice(7).trim() : undefined;
 				this.editor.setText("");
+				await this.handleModelCommand(searchTerm);
 				return;
 			}
 			if (text.startsWith("/export")) {
@@ -2080,6 +2087,15 @@ export class InteractiveMode {
 		}
 	}
 
+	private handleDequeue(): void {
+		const restored = this.restoreQueuedMessagesToEditor();
+		if (restored === 0) {
+			this.showStatus("No queued messages to restore");
+		} else {
+			this.showStatus(`Restored ${restored} queued message${restored > 1 ? "s" : ""} to editor`);
+		}
+	}
+
 	private updateEditorBorderColor(): void {
 		if (this.isBashMode) {
 			this.editor.borderColor = theme.getBashModeBorderColor();
@@ -2251,6 +2267,27 @@ export class InteractiveMode {
 				this.pendingMessagesContainer.addChild(new TruncatedText(text, 1, 0));
 			}
 		}
+	}
+
+	private restoreQueuedMessagesToEditor(options?: { abort?: boolean; currentText?: string }): number {
+		const { steering, followUp } = this.session.clearQueue();
+		const allQueued = [...steering, ...followUp];
+		if (allQueued.length === 0) {
+			this.updatePendingMessagesDisplay();
+			if (options?.abort) {
+				this.agent.abort();
+			}
+			return 0;
+		}
+		const queuedText = allQueued.join("\n\n");
+		const currentText = options?.currentText ?? this.editor.getText();
+		const combinedText = [queuedText, currentText].filter((t) => t.trim()).join("\n\n");
+		this.editor.setText(combinedText);
+		this.updatePendingMessagesDisplay();
+		if (options?.abort) {
+			this.agent.abort();
+		}
+		return allQueued.length;
 	}
 
 	private queueCompactionMessage(text: string, mode: "steer" | "followUp"): void {
@@ -2469,7 +2506,69 @@ export class InteractiveMode {
 		});
 	}
 
-	private showModelSelector(): void {
+	private async handleModelCommand(searchTerm?: string): Promise<void> {
+		if (!searchTerm) {
+			this.showModelSelector();
+			return;
+		}
+
+		const model = await this.findExactModelMatch(searchTerm);
+		if (model) {
+			try {
+				await this.session.setModel(model);
+				this.footer.invalidate();
+				this.updateEditorBorderColor();
+				this.showStatus(`Model: ${model.id}`);
+			} catch (error) {
+				this.showError(error instanceof Error ? error.message : String(error));
+			}
+			return;
+		}
+
+		this.showModelSelector(searchTerm);
+	}
+
+	private async findExactModelMatch(searchTerm: string): Promise<Model<any> | undefined> {
+		const term = searchTerm.trim();
+		if (!term) return undefined;
+
+		let targetProvider: string | undefined;
+		let targetModelId = "";
+
+		if (term.includes("/")) {
+			const parts = term.split("/", 2);
+			targetProvider = parts[0]?.trim().toLowerCase();
+			targetModelId = parts[1]?.trim().toLowerCase() ?? "";
+		} else {
+			targetModelId = term.toLowerCase();
+		}
+
+		if (!targetModelId) return undefined;
+
+		const models = await this.getModelCandidates();
+		const exactMatches = models.filter((item) => {
+			const idMatch = item.id.toLowerCase() === targetModelId;
+			const providerMatch = !targetProvider || item.provider.toLowerCase() === targetProvider;
+			return idMatch && providerMatch;
+		});
+
+		return exactMatches.length === 1 ? exactMatches[0] : undefined;
+	}
+
+	private async getModelCandidates(): Promise<Model<any>[]> {
+		if (this.session.scopedModels.length > 0) {
+			return this.session.scopedModels.map((scoped) => scoped.model);
+		}
+
+		this.session.modelRegistry.refresh();
+		try {
+			return await this.session.modelRegistry.getAvailable();
+		} catch {
+			return [];
+		}
+	}
+
+	private showModelSelector(initialSearchInput?: string): void {
 		this.showSelector((done) => {
 			const selector = new ModelSelectorComponent(
 				this.ui,
@@ -2493,6 +2592,7 @@ export class InteractiveMode {
 					done();
 					this.ui.requestRender();
 				},
+				initialSearchInput,
 			);
 			return { component: selector, focus: selector };
 		});
@@ -3049,6 +3149,7 @@ export class InteractiveMode {
 		const toggleThinking = this.getAppKeyDisplay("toggleThinking");
 		const externalEditor = this.getAppKeyDisplay("externalEditor");
 		const followUp = this.getAppKeyDisplay("followUp");
+		const dequeue = this.getAppKeyDisplay("dequeue");
 
 		let hotkeys = `
 **Navigation**
@@ -3082,6 +3183,7 @@ export class InteractiveMode {
 | \`${toggleThinking}\` | Toggle thinking block visibility |
 | \`${externalEditor}\` | Edit message in external editor |
 | \`${followUp}\` | Queue follow-up message |
+| \`${dequeue}\` | Restore queued messages |
 | \`Ctrl+V\` | Paste image from clipboard |
 | \`/\` | Slash commands |
 | \`!\` | Run bash command |
@@ -3335,6 +3437,7 @@ export class InteractiveMode {
 			this.loadingAnimation = undefined;
 		}
 		this.footer.dispose();
+		this.footerDataProvider.dispose();
 		if (this.unsubscribe) {
 			this.unsubscribe();
 		}
