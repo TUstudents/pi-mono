@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [0.42.5] - 2026-01-11
+
+### Fixed
+
+- Use coding-agent's SessionManager instead of custom MomSessionManager to fix API mismatch crash ([#595](https://github.com/TUstudents/pi-mono/issues/595))
+
+## [0.42.4] - 2026-01-10
+
+## [0.42.3] - 2026-01-10
+
 ## [0.42.2] - 2026-01-10
 
 ## [0.42.1] - 2026-01-09

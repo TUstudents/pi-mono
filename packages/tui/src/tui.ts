@@ -164,7 +164,7 @@ export class TUI extends Container {
 	requestRender(force = false): void {
 		if (force) {
 			this.previousLines = [];
-			this.previousWidth = 0;
+			this.previousWidth = -1; // -1 triggers widthChanged, forcing a full clear
 			this.cursorRow = 0;
 		}
 		if (this.renderRequested) return;
@@ -334,8 +334,8 @@ export class TUI extends Container {
 		// Width changed - need full re-render
 		const widthChanged = this.previousWidth !== 0 && this.previousWidth !== width;
 
-		// First render - just output everything without clearing
-		if (this.previousLines.length === 0) {
+		// First render - just output everything without clearing (assumes clean screen)
+		if (this.previousLines.length === 0 && !widthChanged) {
 			let buffer = "\x1b[?2026h"; // Begin synchronized output
 			for (let i = 0; i < newLines.length; i++) {
 				if (i > 0) buffer += "\r\n";
@@ -368,6 +368,7 @@ export class TUI extends Container {
 
 		// Find first and last changed lines
 		let firstChanged = -1;
+		let lastChanged = -1;
 		const maxLines = Math.max(newLines.length, this.previousLines.length);
 		for (let i = 0; i < maxLines; i++) {
 			const oldLine = i < this.previousLines.length ? this.previousLines[i] : "";
@@ -377,11 +378,37 @@ export class TUI extends Container {
 				if (firstChanged === -1) {
 					firstChanged = i;
 				}
+				lastChanged = i;
 			}
 		}
 
 		// No changes
 		if (firstChanged === -1) {
+			return;
+		}
+
+		// All changes are in deleted lines (nothing to render, just clear)
+		if (firstChanged >= newLines.length) {
+			if (this.previousLines.length > newLines.length) {
+				let buffer = "\x1b[?2026h";
+				// Move to end of new content
+				const targetRow = newLines.length - 1;
+				const lineDiff = targetRow - this.cursorRow;
+				if (lineDiff > 0) buffer += `\x1b[${lineDiff}B`;
+				else if (lineDiff < 0) buffer += `\x1b[${-lineDiff}A`;
+				buffer += "\r";
+				// Clear extra lines
+				const extraLines = this.previousLines.length - newLines.length;
+				for (let i = 0; i < extraLines; i++) {
+					buffer += "\r\n\x1b[2K";
+				}
+				buffer += `\x1b[${extraLines}A`;
+				buffer += "\x1b[?2026l";
+				this.terminal.write(buffer);
+				this.cursorRow = newLines.length - 1;
+			}
+			this.previousLines = newLines;
+			this.previousWidth = width;
 			return;
 		}
 
@@ -420,9 +447,10 @@ export class TUI extends Container {
 
 		buffer += "\r"; // Move to column 0
 
-		// Render from first changed line to end, clearing each line before writing
-		// This avoids the \x1b[J clear-to-end which can cause flicker in xterm.js
-		for (let i = firstChanged; i < newLines.length; i++) {
+		// Only render changed lines (firstChanged to lastChanged), not all lines to end
+		// This reduces flicker when only a single line changes (e.g., spinner animation)
+		const renderEnd = Math.min(lastChanged, newLines.length - 1);
+		for (let i = firstChanged; i <= renderEnd; i++) {
 			if (i > firstChanged) buffer += "\r\n";
 			buffer += "\x1b[2K"; // Clear current line
 			const line = newLines[i];
@@ -458,8 +486,17 @@ export class TUI extends Container {
 			buffer += line;
 		}
 
+		// Track where cursor ended up after rendering
+		let finalCursorRow = renderEnd;
+
 		// If we had more lines before, clear them and move cursor back
 		if (this.previousLines.length > newLines.length) {
+			// Move to end of new content first if we stopped before it
+			if (renderEnd < newLines.length - 1) {
+				const moveDown = newLines.length - 1 - renderEnd;
+				buffer += `\x1b[${moveDown}B`;
+				finalCursorRow = newLines.length - 1;
+			}
 			const extraLines = this.previousLines.length - newLines.length;
 			for (let i = newLines.length; i < this.previousLines.length; i++) {
 				buffer += "\r\n\x1b[2K";
@@ -473,8 +510,8 @@ export class TUI extends Container {
 		// Write entire buffer at once
 		this.terminal.write(buffer);
 
-		// Cursor is now at end of last line
-		this.cursorRow = newLines.length - 1;
+		// Track cursor position for next render
+		this.cursorRow = finalCursorRow;
 
 		this.previousLines = newLines;
 		this.previousWidth = width;

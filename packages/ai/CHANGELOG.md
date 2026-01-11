@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [0.42.5] - 2026-01-11
+
+## [0.42.4] - 2026-01-10
+
+## [0.42.3] - 2026-01-10
+
+### Changed
+
+- OpenAI Codex: switched to bundled system prompt matching opencode, changed originator to "pi", simplified prompt handling
+
 ## [0.42.2] - 2026-01-10
 
 ### Added
