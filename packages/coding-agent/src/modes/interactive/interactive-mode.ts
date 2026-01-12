@@ -21,6 +21,7 @@ import {
 	CombinedAutocompleteProvider,
 	type Component,
 	Container,
+	fuzzyFilter,
 	getEditorKeybindings,
 	Loader,
 	Markdown,
@@ -44,13 +45,14 @@ import type {
 import { FooterDataProvider, type ReadonlyFooterDataProvider } from "../../core/footer-data-provider.js";
 import { KeybindingsManager } from "../../core/keybindings.js";
 import { createCompactionSummaryMessage } from "../../core/messages.js";
+import { resolveModelScope } from "../../core/model-resolver.js";
 import { type SessionContext, SessionManager } from "../../core/session-manager.js";
 import { loadProjectContextFiles } from "../../core/system-prompt.js";
 import type { TruncationResult } from "../../core/tools/truncate.js";
 import { getChangelogPath, getNewEntries, parseChangelog } from "../../utils/changelog.js";
 import { copyToClipboard } from "../../utils/clipboard.js";
 import { extensionForImageMimeType, readClipboardImage } from "../../utils/clipboard-image.js";
-import { fuzzyFilter } from "../../utils/fuzzy.js";
+
 import { ensureTool } from "../../utils/tools-manager.js";
 import { ArminComponent } from "./components/armin.js";
 import { AssistantMessageComponent } from "./components/assistant-message.js";
@@ -68,6 +70,7 @@ import { FooterComponent } from "./components/footer.js";
 import { LoginDialogComponent } from "./components/login-dialog.js";
 import { ModelSelectorComponent } from "./components/model-selector.js";
 import { OAuthSelectorComponent } from "./components/oauth-selector.js";
+import { ScopedModelsSelectorComponent } from "./components/scoped-models-selector.js";
 import { SessionSelectorComponent } from "./components/session-selector.js";
 import { SettingsSelectorComponent } from "./components/settings-selector.js";
 import { ToolExecutionComponent } from "./components/tool-execution.js";
@@ -127,6 +130,7 @@ export class InteractiveMode {
 	private defaultEditor: CustomEditor;
 	private editor: EditorComponent;
 	private autocompleteProvider: CombinedAutocompleteProvider | undefined;
+	private fdPath: string | undefined;
 	private editorContainer: Container;
 	private footer: FooterComponent;
 	private footerDataProvider: FooterDataProvider;
@@ -135,6 +139,7 @@ export class InteractiveMode {
 	private isInitialized = false;
 	private onInputCallback?: (text: string) => void;
 	private loadingAnimation: Loader | undefined = undefined;
+	private readonly defaultWorkingMessage = "Working... (esc to interrupt)";
 
 	private lastSigintTime = 0;
 	private lastEscapeTime = 0;
@@ -156,6 +161,9 @@ export class InteractiveMode {
 
 	// Thinking block visibility state
 	private hideThinkingBlock = false;
+
+	// Skill commands: command name -> skill file path
+	private skillCommands = new Map<string, string>();
 
 	// Agent subscription unsubscribe function
 	private unsubscribe?: () => void;
@@ -262,8 +270,8 @@ export class InteractiveMode {
 						label: `${m.provider}/${m.id}`,
 					}));
 
-					// Fuzzy filter by model ID (not provider/id to avoid matching provider name)
-					const filtered = fuzzyFilter(items, prefix, (item) => item.id);
+					// Fuzzy filter by model ID + provider (allows "opus anthropic" to match)
+					const filtered = fuzzyFilter(items, prefix, (item) => `${item.id} ${item.provider}`);
 
 					if (filtered.length === 0) return null;
 
@@ -274,13 +282,14 @@ export class InteractiveMode {
 					}));
 				},
 			},
+			{ name: "scoped-models", description: "Enable/disable models for Ctrl+P cycling" },
 			{ name: "export", description: "Export session to HTML file" },
 			{ name: "share", description: "Share session as a secret GitHub gist" },
 			{ name: "copy", description: "Copy last agent message to clipboard" },
 			{ name: "session", description: "Show session info and stats" },
 			{ name: "changelog", description: "Show changelog entries" },
 			{ name: "hotkeys", description: "Show all keyboard shortcuts" },
-			{ name: "branch", description: "Create a new branch from a previous message" },
+			{ name: "fork", description: "Create a new fork from a previous message" },
 			{ name: "tree", description: "Navigate session tree (switch branches)" },
 			{ name: "login", description: "Login with OAuth provider" },
 			{ name: "logout", description: "Logout from OAuth provider" },
@@ -303,13 +312,28 @@ export class InteractiveMode {
 			}),
 		);
 
+		// Build skill commands from session.skills (if enabled)
+		this.skillCommands.clear();
+		const skillCommandList: SlashCommand[] = [];
+		if (this.settingsManager.getEnableSkillCommands()) {
+			for (const skill of this.session.skills) {
+				const commandName = `skill:${skill.name}`;
+				this.skillCommands.set(commandName, skill.filePath);
+				skillCommandList.push({ name: commandName, description: skill.description });
+			}
+		}
+
 		// Setup autocomplete
 		this.autocompleteProvider = new CombinedAutocompleteProvider(
-			[...slashCommands, ...templateCommands, ...extensionCommands],
+			[...slashCommands, ...templateCommands, ...extensionCommands, ...skillCommandList],
 			process.cwd(),
 			fdPath,
 		);
 		this.defaultEditor.setAutocompleteProvider(this.autocompleteProvider);
+	}
+
+	private rebuildAutocomplete(): void {
+		this.setupAutocomplete(this.fdPath);
 	}
 
 	async init(): Promise<void> {
@@ -319,8 +343,8 @@ export class InteractiveMode {
 		this.changelogMarkdown = this.getChangelogForDisplay();
 
 		// Setup autocomplete with fd tool for file path completion
-		const fdPath = await ensureTool("fd");
-		this.setupAutocomplete(fdPath);
+		this.fdPath = await ensureTool("fd");
+		this.setupAutocomplete(this.fdPath);
 
 		// Add header with keybindings from config
 		const logo = theme.bold(theme.fg("accent", APP_NAME)) + theme.fg("dim", ` v${this.version}`);
@@ -706,8 +730,8 @@ export class InteractiveMode {
 
 					return { cancelled: false };
 				},
-				branch: async (entryId) => {
-					const result = await this.session.branch(entryId);
+				fork: async (entryId) => {
+					const result = await this.session.fork(entryId);
 					if (result.cancelled) {
 						return { cancelled: true };
 					}
@@ -715,7 +739,7 @@ export class InteractiveMode {
 					this.chatContainer.clear();
 					this.renderInitialMessages();
 					this.editor.setText(result.selectedText);
-					this.showStatus("Branched to new session");
+					this.showStatus("Forked to new session");
 
 					return { cancelled: false };
 				},
@@ -948,6 +972,11 @@ export class InteractiveMode {
 			input: (title, placeholder, opts) => this.showExtensionInput(title, placeholder, opts),
 			notify: (message, type) => this.showExtensionNotify(message, type),
 			setStatus: (key, text) => this.setExtensionStatus(key, text),
+			setWorkingMessage: (message) => {
+				if (this.loadingAnimation) {
+					this.loadingAnimation.setMessage(message ?? this.defaultWorkingMessage);
+				}
+			},
 			setWidget: (key, content) => this.setExtensionWidget(key, content),
 			setFooter: (factory) => this.setExtensionFooter(factory),
 			setHeader: (factory) => this.setExtensionHeader(factory),
@@ -1307,7 +1336,7 @@ export class InteractiveMode {
 				this.isBashMode = false;
 				this.updateEditorBorderColor();
 			} else if (!this.editor.getText().trim()) {
-				// Double-escape with empty editor triggers /tree or /branch based on setting
+				// Double-escape with empty editor triggers /tree or /fork based on setting
 				const now = Date.now();
 				if (now - this.lastEscapeTime < 500) {
 					if (this.settingsManager.getDoubleEscapeAction() === "tree") {
@@ -1386,6 +1415,11 @@ export class InteractiveMode {
 				this.editor.setText("");
 				return;
 			}
+			if (text === "/scoped-models") {
+				this.editor.setText("");
+				await this.showModelsSelector();
+				return;
+			}
 			if (text === "/model" || text.startsWith("/model ")) {
 				const searchTerm = text.startsWith("/model ") ? text.slice(7).trim() : undefined;
 				this.editor.setText("");
@@ -1422,7 +1456,7 @@ export class InteractiveMode {
 				this.editor.setText("");
 				return;
 			}
-			if (text === "/branch") {
+			if (text === "/fork") {
 				this.showUserMessageSelector();
 				this.editor.setText("");
 				return;
@@ -1472,6 +1506,20 @@ export class InteractiveMode {
 				this.editor.setText("");
 				await this.shutdown();
 				return;
+			}
+
+			// Handle skill commands (/skill:name [args])
+			if (text.startsWith("/skill:")) {
+				const spaceIndex = text.indexOf(" ");
+				const commandName = spaceIndex === -1 ? text.slice(1) : text.slice(1, spaceIndex);
+				const args = spaceIndex === -1 ? "" : text.slice(spaceIndex + 1).trim();
+				const skillPath = this.skillCommands.get(commandName);
+				if (skillPath) {
+					this.editor.addToHistory?.(text);
+					this.editor.setText("");
+					await this.handleSkillCommand(skillPath, args);
+					return;
+				}
 			}
 
 			// Handle bash command (! for normal, !! for excluded from context)
@@ -1559,7 +1607,7 @@ export class InteractiveMode {
 					this.ui,
 					(spinner) => theme.fg("accent", spinner),
 					(text) => theme.fg("muted", text),
-					"Working... (esc to interrupt)",
+					this.defaultWorkingMessage,
 				);
 				this.statusContainer.addChild(this.loadingAnimation);
 				this.ui.requestRender();
@@ -2217,7 +2265,8 @@ export class InteractiveMode {
 
 			// Restart TUI
 			this.ui.start();
-			this.ui.requestRender();
+			// Force full re-render since external editor uses alternate screen
+			this.ui.requestRender(true);
 		}
 	}
 
@@ -2436,6 +2485,7 @@ export class InteractiveMode {
 					showImages: this.settingsManager.getShowImages(),
 					autoResizeImages: this.settingsManager.getImageAutoResize(),
 					blockImages: this.settingsManager.getBlockImages(),
+					enableSkillCommands: this.settingsManager.getEnableSkillCommands(),
 					steeringMode: this.session.steeringMode,
 					followUpMode: this.session.followUpMode,
 					thinkingLevel: this.session.thinkingLevel,
@@ -2464,6 +2514,10 @@ export class InteractiveMode {
 					},
 					onBlockImagesChange: (blocked) => {
 						this.settingsManager.setBlockImages(blocked);
+					},
+					onEnableSkillCommandsChange: (enabled) => {
+						this.settingsManager.setEnableSkillCommands(enabled);
+						this.rebuildAutocomplete();
 					},
 					onSteeringModeChange: (mode) => {
 						this.session.setSteeringMode(mode);
@@ -2610,11 +2664,129 @@ export class InteractiveMode {
 		});
 	}
 
+	private async showModelsSelector(): Promise<void> {
+		// Get all available models
+		this.session.modelRegistry.refresh();
+		const allModels = this.session.modelRegistry.getAvailable();
+
+		if (allModels.length === 0) {
+			this.showStatus("No models available");
+			return;
+		}
+
+		// Check if session has scoped models (from previous session-only changes or CLI --models)
+		const sessionScopedModels = this.session.scopedModels;
+		const hasSessionScope = sessionScopedModels.length > 0;
+
+		// Build enabled model IDs from session state or settings
+		const enabledModelIds = new Set<string>();
+		let hasFilter = false;
+
+		if (hasSessionScope) {
+			// Use current session's scoped models
+			for (const sm of sessionScopedModels) {
+				enabledModelIds.add(`${sm.model.provider}/${sm.model.id}`);
+			}
+			hasFilter = true;
+		} else {
+			// Fall back to settings
+			const patterns = this.settingsManager.getEnabledModels();
+			if (patterns !== undefined && patterns.length > 0) {
+				hasFilter = true;
+				const scopedModels = await resolveModelScope(patterns, this.session.modelRegistry);
+				for (const sm of scopedModels) {
+					enabledModelIds.add(`${sm.model.provider}/${sm.model.id}`);
+				}
+			}
+		}
+
+		// Track current enabled state (session-only until persisted)
+		const currentEnabledIds = new Set(enabledModelIds);
+		let currentHasFilter = hasFilter;
+
+		// Helper to update session's scoped models (session-only, no persist)
+		const updateSessionModels = async (enabledIds: Set<string>) => {
+			if (enabledIds.size > 0 && enabledIds.size < allModels.length) {
+				// Use current session thinking level, not settings default
+				const currentThinkingLevel = this.session.thinkingLevel;
+				const newScopedModels = await resolveModelScope(Array.from(enabledIds), this.session.modelRegistry);
+				this.session.setScopedModels(
+					newScopedModels.map((sm) => ({
+						model: sm.model,
+						thinkingLevel: sm.thinkingLevel ?? currentThinkingLevel,
+					})),
+				);
+			} else {
+				// All enabled or none enabled = no filter
+				this.session.setScopedModels([]);
+			}
+		};
+
+		this.showSelector((done) => {
+			const selector = new ScopedModelsSelectorComponent(
+				{
+					allModels,
+					enabledModelIds: currentEnabledIds,
+					hasEnabledModelsFilter: currentHasFilter,
+				},
+				{
+					onModelToggle: async (modelId, enabled) => {
+						if (enabled) {
+							currentEnabledIds.add(modelId);
+						} else {
+							currentEnabledIds.delete(modelId);
+						}
+						currentHasFilter = true;
+						await updateSessionModels(currentEnabledIds);
+					},
+					onEnableAll: async (allModelIds) => {
+						currentEnabledIds.clear();
+						for (const id of allModelIds) {
+							currentEnabledIds.add(id);
+						}
+						currentHasFilter = false;
+						await updateSessionModels(currentEnabledIds);
+					},
+					onClearAll: async () => {
+						currentEnabledIds.clear();
+						currentHasFilter = true;
+						await updateSessionModels(currentEnabledIds);
+					},
+					onToggleProvider: async (_provider, modelIds, enabled) => {
+						for (const id of modelIds) {
+							if (enabled) {
+								currentEnabledIds.add(id);
+							} else {
+								currentEnabledIds.delete(id);
+							}
+						}
+						currentHasFilter = true;
+						await updateSessionModels(currentEnabledIds);
+					},
+					onPersist: (enabledIds) => {
+						// Persist to settings
+						const newPatterns =
+							enabledIds.length === allModels.length
+								? undefined // All enabled = clear filter
+								: enabledIds;
+						this.settingsManager.setEnabledModels(newPatterns);
+						this.showStatus("Model selection saved to settings");
+					},
+					onCancel: () => {
+						done();
+						this.ui.requestRender();
+					},
+				},
+			);
+			return { component: selector, focus: selector };
+		});
+	}
+
 	private showUserMessageSelector(): void {
-		const userMessages = this.session.getUserMessagesForBranching();
+		const userMessages = this.session.getUserMessagesForForking();
 
 		if (userMessages.length === 0) {
-			this.showStatus("No messages to branch from");
+			this.showStatus("No messages to fork from");
 			return;
 		}
 
@@ -2622,9 +2794,9 @@ export class InteractiveMode {
 			const selector = new UserMessageSelectorComponent(
 				userMessages.map((m) => ({ id: m.entryId, text: m.text })),
 				async (entryId) => {
-					const result = await this.session.branch(entryId);
+					const result = await this.session.fork(entryId);
 					if (result.cancelled) {
-						// Extension cancelled the branch
+						// Extension cancelled the fork
 						done();
 						this.ui.requestRender();
 						return;
@@ -2645,7 +2817,7 @@ export class InteractiveMode {
 		});
 	}
 
-	private showTreeSelector(): void {
+	private showTreeSelector(initialSelectedId?: string): void {
 		const tree = this.sessionManager.getTree();
 		const realLeafId = this.sessionManager.getLeafId();
 
@@ -2679,10 +2851,36 @@ export class InteractiveMode {
 					// Ask about summarization
 					done(); // Close selector first
 
-					const wantsSummary = await this.showExtensionConfirm(
-						"Summarize branch?",
-						"Create a summary of the branch you're leaving?",
-					);
+					// Loop until user makes a complete choice or cancels to tree
+					let wantsSummary = false;
+					let customInstructions: string | undefined;
+
+					while (true) {
+						const summaryChoice = await this.showExtensionSelector("Summarize branch?", [
+							"No summary",
+							"Summarize",
+							"Summarize with custom prompt",
+						]);
+
+						if (summaryChoice === undefined) {
+							// User pressed escape - re-show tree selector with same selection
+							this.showTreeSelector(entryId);
+							return;
+						}
+
+						wantsSummary = summaryChoice !== "No summary";
+
+						if (summaryChoice === "Summarize with custom prompt") {
+							customInstructions = await this.showExtensionEditor("Custom summarization instructions");
+							if (customInstructions === undefined) {
+								// User cancelled - loop back to summary selector
+								continue;
+							}
+						}
+
+						// User made a complete choice
+						break;
+					}
 
 					// Set up escape handler and loader if summarizing
 					let summaryLoader: Loader | undefined;
@@ -2704,12 +2902,15 @@ export class InteractiveMode {
 					}
 
 					try {
-						const result = await this.session.navigateTree(entryId, { summarize: wantsSummary });
+						const result = await this.session.navigateTree(entryId, {
+							summarize: wantsSummary,
+							customInstructions,
+						});
 
 						if (result.aborted) {
-							// Summarization aborted - re-show tree selector
+							// Summarization aborted - re-show tree selector with same selection
 							this.showStatus("Branch summarization cancelled");
-							this.showTreeSelector();
+							this.showTreeSelector(entryId);
 							return;
 						}
 						if (result.cancelled) {
@@ -2742,6 +2943,7 @@ export class InteractiveMode {
 					this.sessionManager.appendLabelChange(entryId, label);
 					this.ui.requestRender();
 				},
+				initialSelectedId,
 			);
 			return { component: selector, focus: selector };
 		});
@@ -2749,9 +2951,10 @@ export class InteractiveMode {
 
 	private showSessionSelector(): void {
 		this.showSelector((done) => {
-			const sessions = SessionManager.list(this.sessionManager.getCwd(), this.sessionManager.getSessionDir());
 			const selector = new SessionSelectorComponent(
-				sessions,
+				(onProgress) =>
+					SessionManager.list(this.sessionManager.getCwd(), this.sessionManager.getSessionDir(), onProgress),
+				SessionManager.listAll,
 				async (sessionPath) => {
 					done();
 					await this.handleResumeSession(sessionPath);
@@ -2763,6 +2966,7 @@ export class InteractiveMode {
 				() => {
 					void this.shutdown();
 				},
+				() => this.ui.requestRender(),
 			);
 			return { component: selector, focus: selector.getSessionList() };
 		});
@@ -3081,6 +3285,18 @@ export class InteractiveMode {
 		this.chatContainer.addChild(new Spacer(1));
 		this.chatContainer.addChild(new Text(info, 1, 0));
 		this.ui.requestRender();
+	}
+
+	private async handleSkillCommand(skillPath: string, args: string): Promise<void> {
+		try {
+			const content = fs.readFileSync(skillPath, "utf-8");
+			// Strip YAML frontmatter if present
+			const body = content.replace(/^---\n[\s\S]*?\n---\n/, "").trim();
+			const message = args ? `${body}\n\n---\n\nUser: ${args}` : body;
+			await this.session.prompt(message);
+		} catch (err) {
+			this.showError(`Failed to load skill: ${err instanceof Error ? err.message : String(err)}`);
+		}
 	}
 
 	private handleChangelogCommand(): void {

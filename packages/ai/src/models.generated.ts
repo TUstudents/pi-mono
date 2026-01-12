@@ -4359,23 +4359,6 @@ export const MODELS = {
 			contextWindow: 256000,
 			maxTokens: 128000,
 		} satisfies Model<"openai-completions">,
-		"kwaipilot/kat-coder-pro:free": {
-			id: "kwaipilot/kat-coder-pro:free",
-			name: "Kwaipilot: KAT-Coder-Pro V1 (free)",
-			api: "openai-completions",
-			provider: "openrouter",
-			baseUrl: "https://openrouter.ai/api/v1",
-			reasoning: false,
-			input: ["text"],
-			cost: {
-				input: 0,
-				output: 0,
-				cacheRead: 0,
-				cacheWrite: 0,
-			},
-			contextWindow: 256000,
-			maxTokens: 128000,
-		} satisfies Model<"openai-completions">,
 		"meta-llama/llama-3-70b-instruct": {
 			id: "meta-llama/llama-3-70b-instruct",
 			name: "Meta: Llama 3 70B Instruct",

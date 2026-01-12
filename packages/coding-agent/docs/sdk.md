@@ -108,8 +108,8 @@ interface AgentSession {
   newSession(options?: { parentSession?: string }): Promise<boolean>;  // Returns false if cancelled by hook
   switchSession(sessionPath: string): Promise<boolean>;
   
-  // Branching
-  branch(entryId: string): Promise<{ selectedText: string; cancelled: boolean }>;  // Creates new session file
+  // Forking
+  fork(entryId: string): Promise<{ selectedText: string; cancelled: boolean }>;  // Creates new session file
   navigateTree(targetId: string, options?: { summarize?: boolean }): Promise<{ editorText?: string; cancelled: boolean }>;  // In-place navigation
   
   // Hook message injection
@@ -636,11 +636,16 @@ const { session } = await createAgentSession({
   sessionManager: SessionManager.open("/path/to/session.jsonl"),
 });
 
-// List available sessions
-const sessions = SessionManager.list(process.cwd());
+// List available sessions (async with optional progress callback)
+const sessions = await SessionManager.list(process.cwd());
 for (const info of sessions) {
-  console.log(`${info.id}: ${info.firstMessage} (${info.messageCount} messages)`);
+  console.log(`${info.id}: ${info.firstMessage} (${info.messageCount} messages, cwd: ${info.cwd})`);
 }
+
+// List all sessions across all projects
+const allSessions = await SessionManager.listAll((loaded, total) => {
+  console.log(`Loading ${loaded}/${total}...`);
+});
 
 // Custom session directory (no cwd encoding)
 const customDir = "/path/to/my-sessions";

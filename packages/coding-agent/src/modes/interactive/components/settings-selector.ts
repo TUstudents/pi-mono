@@ -26,6 +26,7 @@ export interface SettingsConfig {
 	showImages: boolean;
 	autoResizeImages: boolean;
 	blockImages: boolean;
+	enableSkillCommands: boolean;
 	steeringMode: "all" | "one-at-a-time";
 	followUpMode: "all" | "one-at-a-time";
 	thinkingLevel: ThinkingLevel;
@@ -34,7 +35,7 @@ export interface SettingsConfig {
 	availableThemes: string[];
 	hideThinkingBlock: boolean;
 	collapseChangelog: boolean;
-	doubleEscapeAction: "branch" | "tree";
+	doubleEscapeAction: "fork" | "tree";
 }
 
 export interface SettingsCallbacks {
@@ -42,6 +43,7 @@ export interface SettingsCallbacks {
 	onShowImagesChange: (enabled: boolean) => void;
 	onAutoResizeImagesChange: (enabled: boolean) => void;
 	onBlockImagesChange: (blocked: boolean) => void;
+	onEnableSkillCommandsChange: (enabled: boolean) => void;
 	onSteeringModeChange: (mode: "all" | "one-at-a-time") => void;
 	onFollowUpModeChange: (mode: "all" | "one-at-a-time") => void;
 	onThinkingLevelChange: (level: ThinkingLevel) => void;
@@ -49,7 +51,7 @@ export interface SettingsCallbacks {
 	onThemePreview?: (theme: string) => void;
 	onHideThinkingBlockChange: (hidden: boolean) => void;
 	onCollapseChangelogChange: (collapsed: boolean) => void;
-	onDoubleEscapeActionChange: (action: "branch" | "tree") => void;
+	onDoubleEscapeActionChange: (action: "fork" | "tree") => void;
 	onCancel: () => void;
 }
 
@@ -169,7 +171,7 @@ export class SettingsSelectorComponent extends Container {
 				label: "Double-escape action",
 				description: "Action when pressing Escape twice with empty editor",
 				currentValue: config.doubleEscapeAction,
-				values: ["tree", "branch"],
+				values: ["tree", "fork"],
 			},
 			{
 				id: "thinking",
@@ -255,6 +257,16 @@ export class SettingsSelectorComponent extends Container {
 			values: ["true", "false"],
 		});
 
+		// Skill commands toggle (insert after block-images)
+		const blockImagesIndex = items.findIndex((item) => item.id === "block-images");
+		items.splice(blockImagesIndex + 1, 0, {
+			id: "skill-commands",
+			label: "Skill commands",
+			description: "Register skills as /skill:name commands",
+			currentValue: config.enableSkillCommands ? "true" : "false",
+			values: ["true", "false"],
+		});
+
 		// Add borders
 		this.addChild(new DynamicBorder());
 
@@ -276,6 +288,9 @@ export class SettingsSelectorComponent extends Container {
 					case "block-images":
 						callbacks.onBlockImagesChange(newValue === "true");
 						break;
+					case "skill-commands":
+						callbacks.onEnableSkillCommandsChange(newValue === "true");
+						break;
 					case "steering-mode":
 						callbacks.onSteeringModeChange(newValue as "all" | "one-at-a-time");
 						break;
@@ -289,7 +304,7 @@ export class SettingsSelectorComponent extends Container {
 						callbacks.onCollapseChangelogChange(newValue === "true");
 						break;
 					case "double-escape-action":
-						callbacks.onDoubleEscapeActionChange(newValue as "branch" | "tree");
+						callbacks.onDoubleEscapeActionChange(newValue as "fork" | "tree");
 						break;
 				}
 			},

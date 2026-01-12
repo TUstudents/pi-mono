@@ -50,7 +50,7 @@ export type NewSessionHandler = (options?: {
 	setup?: (sessionManager: SessionManager) => Promise<void>;
 }) => Promise<{ cancelled: boolean }>;
 
-export type BranchHandler = (entryId: string) => Promise<{ cancelled: boolean }>;
+export type ForkHandler = (entryId: string) => Promise<{ cancelled: boolean }>;
 
 export type NavigateTreeHandler = (
 	targetId: string,
@@ -79,6 +79,7 @@ const noOpUIContext: ExtensionUIContext = {
 	input: async () => undefined,
 	notify: () => {},
 	setStatus: () => {},
+	setWorkingMessage: () => {},
 	setWidget: () => {},
 	setFooter: () => {},
 	setHeader: () => {},
@@ -110,7 +111,7 @@ export class ExtensionRunner {
 	private abortFn: () => void = () => {};
 	private hasPendingMessagesFn: () => boolean = () => false;
 	private newSessionHandler: NewSessionHandler = async () => ({ cancelled: false });
-	private branchHandler: BranchHandler = async () => ({ cancelled: false });
+	private forkHandler: ForkHandler = async () => ({ cancelled: false });
 	private navigateTreeHandler: NavigateTreeHandler = async () => ({ cancelled: false });
 	private shutdownHandler: ShutdownHandler = () => {};
 
@@ -157,7 +158,7 @@ export class ExtensionRunner {
 		if (commandContextActions) {
 			this.waitForIdleFn = commandContextActions.waitForIdle;
 			this.newSessionHandler = commandContextActions.newSession;
-			this.branchHandler = commandContextActions.branch;
+			this.forkHandler = commandContextActions.fork;
 			this.navigateTreeHandler = commandContextActions.navigateTree;
 		}
 		this.uiContext = uiContext ?? noOpUIContext;
@@ -306,13 +307,16 @@ export class ExtensionRunner {
 	 * Context values are resolved at call time, so changes via initialize() are reflected.
 	 */
 	createContext(): ExtensionContext {
+		const getModel = this.getModel;
 		return {
 			ui: this.uiContext,
 			hasUI: this.hasUI(),
 			cwd: this.cwd,
 			sessionManager: this.sessionManager,
 			modelRegistry: this.modelRegistry,
-			model: this.getModel(),
+			get model() {
+				return getModel();
+			},
 			isIdle: () => this.isIdleFn(),
 			abort: () => this.abortFn(),
 			hasPendingMessages: () => this.hasPendingMessagesFn(),
@@ -325,17 +329,17 @@ export class ExtensionRunner {
 			...this.createContext(),
 			waitForIdle: () => this.waitForIdleFn(),
 			newSession: (options) => this.newSessionHandler(options),
-			branch: (entryId) => this.branchHandler(entryId),
+			fork: (entryId) => this.forkHandler(entryId),
 			navigateTree: (targetId, options) => this.navigateTreeHandler(targetId, options),
 		};
 	}
 
 	private isSessionBeforeEvent(
 		type: string,
-	): type is "session_before_switch" | "session_before_branch" | "session_before_compact" | "session_before_tree" {
+	): type is "session_before_switch" | "session_before_fork" | "session_before_compact" | "session_before_tree" {
 		return (
 			type === "session_before_switch" ||
-			type === "session_before_branch" ||
+			type === "session_before_fork" ||
 			type === "session_before_compact" ||
 			type === "session_before_tree"
 		);

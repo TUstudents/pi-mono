@@ -1,8 +1,7 @@
 import { type Model, modelsAreEqual } from "@cargo-cult/pi-ai";
-import { Container, getEditorKeybindings, Input, Spacer, Text, type TUI } from "@cargo-cult/pi-tui";
+import { Container, fuzzyFilter, getEditorKeybindings, Input, Spacer, Text, type TUI } from "@cargo-cult/pi-tui";
 import type { ModelRegistry } from "../../../core/model-registry.js";
 import type { SettingsManager } from "../../../core/settings-manager.js";
-import { fuzzyFilter } from "../../../utils/fuzzy.js";
 import { theme } from "../theme/theme.js";
 import { DynamicBorder } from "./dynamic-border.js";
 
@@ -154,7 +153,7 @@ export class ModelSelectorComponent extends Container {
 	}
 
 	private filterModels(query: string): void {
-		this.filteredModels = fuzzyFilter(this.allModels, query, ({ id }) => id);
+		this.filteredModels = fuzzyFilter(this.allModels, query, ({ id, provider }) => `${id} ${provider}`);
 		this.selectedIndex = Math.min(this.selectedIndex, Math.max(0, this.filteredModels.length - 1));
 		this.updateList();
 	}

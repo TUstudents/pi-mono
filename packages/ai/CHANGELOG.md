@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.43.0] - 2026-01-11
+
+### Fixed
+
+- Fixed Google provider thinking detection: `isThinkingPart()` now only checks `thought === true`, not `thoughtSignature`. Per Google docs, `thoughtSignature` is for context replay and can appear on any part type. Also removed `id` field from `functionCall`/`functionResponse` (rejected by Vertex AI and Cloud Code Assist), and added `textSignature` round-trip for multi-turn reasoning context. ([#631](https://github.com/TUstudents/pi-mono/pull/631) by [@theBucky](https://github.com/theBucky))
+
 ## [0.42.5] - 2026-01-11
 
 ## [0.42.4] - 2026-01-10

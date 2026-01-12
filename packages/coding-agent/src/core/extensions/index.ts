@@ -9,8 +9,8 @@ export {
 	loadExtensions,
 } from "./loader.js";
 export type {
-	BranchHandler,
 	ExtensionErrorListener,
+	ForkHandler,
 	NavigateTreeHandler,
 	NewSessionHandler,
 	ShutdownHandler,
@@ -67,23 +67,25 @@ export type {
 	// Message Rendering
 	MessageRenderer,
 	MessageRenderOptions,
+	ModelSelectEvent,
+	ModelSelectSource,
 	ReadToolResultEvent,
 	// Commands
 	RegisteredCommand,
 	RegisteredTool,
 	SendMessageHandler,
 	SendUserMessageHandler,
-	SessionBeforeBranchEvent,
-	SessionBeforeBranchResult,
 	SessionBeforeCompactEvent,
 	SessionBeforeCompactResult,
+	SessionBeforeForkEvent,
+	SessionBeforeForkResult,
 	SessionBeforeSwitchEvent,
 	SessionBeforeSwitchResult,
 	SessionBeforeTreeEvent,
 	SessionBeforeTreeResult,
-	SessionBranchEvent,
 	SessionCompactEvent,
 	SessionEvent,
+	SessionForkEvent,
 	SessionShutdownEvent,
 	// Events - Session
 	SessionStartEvent,

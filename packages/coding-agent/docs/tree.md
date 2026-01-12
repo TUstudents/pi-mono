@@ -6,14 +6,14 @@ The `/tree` command provides tree-based navigation of the session history.
 
 Sessions are stored as trees where each entry has an `id` and `parentId`. The "leaf" pointer tracks the current position. `/tree` lets you navigate to any point and optionally summarize the branch you're leaving.
 
-### Comparison with `/branch`
+### Comparison with `/fork`
 
-| Feature | `/branch` | `/tree` |
-|---------|-----------|---------|
+| Feature | `/fork` | `/tree` |
+|---------|---------|---------|
 | View | Flat list of user messages | Full tree structure |
 | Action | Extracts path to **new session file** | Changes leaf in **same session** |
 | Summary | Never | Optional (user prompted) |
-| Events | `session_before_branch` / `session_branch` | `session_before_tree` / `session_tree` |
+| Events | `session_before_fork` / `session_fork` | `session_before_tree` / `session_tree` |
 
 ## Tree UI
 
@@ -66,7 +66,11 @@ If user selects the very first message (has no parent):
 
 ## Branch Summarization
 
-When switching, user is prompted: "Summarize the branch you're leaving?"
+When switching branches, user is presented with three options:
+
+1. **No summary** - Switch immediately without summarizing
+2. **Summarize** - Generate a summary using the default prompt
+3. **Summarize with custom prompt** - Opens an editor to enter additional focus instructions that are appended to the default summarization prompt
 
 ### What Gets Summarized
 

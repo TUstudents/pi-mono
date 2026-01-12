@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [0.43.0] - 2026-01-11
+
+### Added
+
+- `fuzzyFilter()` and `fuzzyMatch()` utilities for fuzzy text matching
+- Slash command autocomplete now uses fuzzy matching instead of prefix matching
+
+### Fixed
+
+- Cursor now moves to end of content on exit, preventing status line from being overwritten ([#629](https://github.com/TUstudents/pi-mono/pull/629) by [@tallshort](https://github.com/tallshort))
+- Reset ANSI styles after each rendered line to prevent style leakage
+
 ## [0.42.5] - 2026-01-11
 
 ### Fixed

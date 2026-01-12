@@ -278,9 +278,9 @@ user sends another prompt ◄─────────────────
   ├─► session_before_switch (can cancel)
   └─► session_switch
 
-/branch
-  ├─► session_before_branch (can cancel)
-  └─► session_branch
+/fork
+  ├─► session_before_fork (can cancel)
+  └─► session_fork
 
 /compact or auto-compaction
   ├─► session_before_compact (can cancel or customize)
@@ -289,6 +289,9 @@ user sends another prompt ◄─────────────────
 /tree navigation
   ├─► session_before_tree (can cancel or customize)
   └─► session_tree
+
+/model or Ctrl+P (model selection/cycling)
+  └─► model_select
 
 exit (Ctrl+C, Ctrl+D)
   └─► session_shutdown
@@ -331,19 +334,19 @@ pi.on("session_switch", async (event, ctx) => {
 
 **Examples:** [confirm-destructive.ts](../examples/extensions/confirm-destructive.ts), [dirty-repo-guard.ts](../examples/extensions/dirty-repo-guard.ts), [status-line.ts](../examples/extensions/status-line.ts), [todo.ts](../examples/extensions/todo.ts)
 
-#### session_before_branch / session_branch
+#### session_before_fork / session_fork
 
-Fired when branching via `/branch`.
+Fired when forking via `/fork`.
 
 ```typescript
-pi.on("session_before_branch", async (event, ctx) => {
-  // event.entryId - ID of the entry being branched from
-  return { cancel: true }; // Cancel branch
+pi.on("session_before_fork", async (event, ctx) => {
+  // event.entryId - ID of the entry being forked from
+  return { cancel: true }; // Cancel fork
   // OR
-  return { skipConversationRestore: true }; // Branch but don't rewind messages
+  return { skipConversationRestore: true }; // Fork but don't rewind messages
 });
 
-pi.on("session_branch", async (event, ctx) => {
+pi.on("session_fork", async (event, ctx) => {
   // event.previousSessionFile - previous session file
 });
 ```
@@ -480,6 +483,31 @@ pi.on("context", async (event, ctx) => {
 ```
 
 **Examples:** [plan-mode.ts](../examples/extensions/plan-mode.ts)
+
+### Model Events
+
+#### model_select
+
+Fired when the model changes via `/model` command, model cycling (`Ctrl+P`), or session restore.
+
+```typescript
+pi.on("model_select", async (event, ctx) => {
+  // event.model - newly selected model
+  // event.previousModel - previous model (undefined if first selection)
+  // event.source - "set" | "cycle" | "restore"
+  
+  const prev = event.previousModel 
+    ? `${event.previousModel.provider}/${event.previousModel.id}` 
+    : "none";
+  const next = `${event.model.provider}/${event.model.id}`;
+  
+  ctx.ui.notify(`Model changed (${event.source}): ${prev} -> ${next}`, "info");
+});
+```
+
+Use this to update UI elements (status bars, footers) or perform model-specific initialization when the active model changes.
+
+**Examples:** [model-status.ts](../examples/extensions/model-status.ts)
 
 ### Tool Events
 
@@ -1170,6 +1198,7 @@ Extensions can interact with users via `ctx.ui` methods and customize how messag
 - Async operations with cancel (BorderedLoader)
 - Settings toggles (SettingsList)
 - Status indicators (setStatus)
+- Working message during streaming (setWorkingMessage)
 - Widgets above editor (setWidget)
 - Custom footers (setFooter)
 
@@ -1255,6 +1284,10 @@ See [examples/extensions/timed-confirm.ts](../examples/extensions/timed-confirm.
 // Status in footer (persistent until cleared)
 ctx.ui.setStatus("my-ext", "Processing...");
 ctx.ui.setStatus("my-ext", undefined);  // Clear
+
+// Working message (shown during streaming)
+ctx.ui.setWorkingMessage("Thinking deeply...");
+ctx.ui.setWorkingMessage();  // Restore default
 
 // Widget above editor (string array or factory function)
 ctx.ui.setWidget("my-widget", ["Line 1", "Line 2"]);

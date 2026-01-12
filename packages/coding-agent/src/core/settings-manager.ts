@@ -25,6 +25,7 @@ export interface SkillsSettings {
 	enableClaudeProject?: boolean; // default: true
 	enablePiUser?: boolean; // default: true
 	enablePiProject?: boolean; // default: true
+	enableSkillCommands?: boolean; // default: true - register skills as /skill:name commands
 	customDirectories?: string[]; // default: []
 	ignoredSkills?: string[]; // default: [] (glob patterns to exclude; takes precedence over includeSkills)
 	includeSkills?: string[]; // default: [] (empty = include all; glob patterns to filter)
@@ -65,7 +66,7 @@ export interface Settings {
 	terminal?: TerminalSettings;
 	images?: ImageSettings;
 	enabledModels?: string[]; // Model patterns for cycling (same format as --models CLI flag)
-	doubleEscapeAction?: "branch" | "tree"; // Action for double-escape with empty editor (default: "tree")
+	doubleEscapeAction?: "fork" | "tree"; // Action for double-escape with empty editor (default: "tree")
 	thinkingBudgets?: ThinkingBudgetsSettings; // Custom token budgets for thinking levels
 }
 
@@ -383,10 +384,23 @@ export class SettingsManager {
 			enableClaudeProject: this.settings.skills?.enableClaudeProject ?? true,
 			enablePiUser: this.settings.skills?.enablePiUser ?? true,
 			enablePiProject: this.settings.skills?.enablePiProject ?? true,
+			enableSkillCommands: this.settings.skills?.enableSkillCommands ?? true,
 			customDirectories: [...(this.settings.skills?.customDirectories ?? [])],
 			ignoredSkills: [...(this.settings.skills?.ignoredSkills ?? [])],
 			includeSkills: [...(this.settings.skills?.includeSkills ?? [])],
 		};
+	}
+
+	getEnableSkillCommands(): boolean {
+		return this.settings.skills?.enableSkillCommands ?? true;
+	}
+
+	setEnableSkillCommands(enabled: boolean): void {
+		if (!this.globalSettings.skills) {
+			this.globalSettings.skills = {};
+		}
+		this.globalSettings.skills.enableSkillCommands = enabled;
+		this.save();
 	}
 
 	getThinkingBudgets(): ThinkingBudgetsSettings | undefined {
@@ -433,11 +447,16 @@ export class SettingsManager {
 		return this.settings.enabledModels;
 	}
 
-	getDoubleEscapeAction(): "branch" | "tree" {
+	setEnabledModels(patterns: string[] | undefined): void {
+		this.globalSettings.enabledModels = patterns;
+		this.save();
+	}
+
+	getDoubleEscapeAction(): "fork" | "tree" {
 		return this.settings.doubleEscapeAction ?? "tree";
 	}
 
-	setDoubleEscapeAction(action: "branch" | "tree"): void {
+	setDoubleEscapeAction(action: "fork" | "tree"): void {
 		this.globalSettings.doubleEscapeAction = action;
 		this.save();
 	}

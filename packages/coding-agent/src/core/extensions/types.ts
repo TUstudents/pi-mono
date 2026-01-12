@@ -74,6 +74,9 @@ export interface ExtensionUIContext {
 	/** Set status text in the footer/status bar. Pass undefined to clear. */
 	setStatus(key: string, text: string | undefined): void;
 
+	/** Set the working/loading message shown during streaming. Call with no argument to restore default. */
+	setWorkingMessage(message?: string): void;
+
 	/** Set a widget to display above the editor. Accepts string array or component factory. */
 	setWidget(key: string, content: string[] | undefined): void;
 	setWidget(key: string, content: ((tui: TUI, theme: Theme) => Component & { dispose?(): void }) | undefined): void;
@@ -210,8 +213,8 @@ export interface ExtensionCommandContext extends ExtensionContext {
 		setup?: (sessionManager: SessionManager) => Promise<void>;
 	}): Promise<{ cancelled: boolean }>;
 
-	/** Branch from a specific entry, creating a new session file. */
-	branch(entryId: string): Promise<{ cancelled: boolean }>;
+	/** Fork from a specific entry, creating a new session file. */
+	fork(entryId: string): Promise<{ cancelled: boolean }>;
 
 	/** Navigate to a different point in the session tree. */
 	navigateTree(targetId: string, options?: { summarize?: boolean }): Promise<{ cancelled: boolean }>;
@@ -281,15 +284,15 @@ export interface SessionSwitchEvent {
 	previousSessionFile: string | undefined;
 }
 
-/** Fired before branching a session (can be cancelled) */
-export interface SessionBeforeBranchEvent {
-	type: "session_before_branch";
+/** Fired before forking a session (can be cancelled) */
+export interface SessionBeforeForkEvent {
+	type: "session_before_fork";
 	entryId: string;
 }
 
-/** Fired after branching a session */
-export interface SessionBranchEvent {
-	type: "session_branch";
+/** Fired after forking a session */
+export interface SessionForkEvent {
+	type: "session_fork";
 	previousSessionFile: string | undefined;
 }
 
@@ -343,8 +346,8 @@ export type SessionEvent =
 	| SessionStartEvent
 	| SessionBeforeSwitchEvent
 	| SessionSwitchEvent
-	| SessionBeforeBranchEvent
-	| SessionBranchEvent
+	| SessionBeforeForkEvent
+	| SessionForkEvent
 	| SessionBeforeCompactEvent
 	| SessionCompactEvent
 	| SessionShutdownEvent
@@ -393,6 +396,20 @@ export interface TurnEndEvent {
 	turnIndex: number;
 	message: AgentMessage;
 	toolResults: ToolResultMessage[];
+}
+
+// ============================================================================
+// Model Events
+// ============================================================================
+
+export type ModelSelectSource = "set" | "cycle" | "restore";
+
+/** Fired when a new model is selected */
+export interface ModelSelectEvent {
+	type: "model_select";
+	model: Model<any>;
+	previousModel: Model<any> | undefined;
+	source: ModelSelectSource;
 }
 
 // ============================================================================
@@ -513,6 +530,7 @@ export type ExtensionEvent =
 	| AgentEndEvent
 	| TurnStartEvent
 	| TurnEndEvent
+	| ModelSelectEvent
 	| UserBashEvent
 	| ToolCallEvent
 	| ToolResultEvent;
@@ -554,7 +572,7 @@ export interface SessionBeforeSwitchResult {
 	cancel?: boolean;
 }
 
-export interface SessionBeforeBranchResult {
+export interface SessionBeforeForkResult {
 	cancel?: boolean;
 	skipConversationRestore?: boolean;
 }
@@ -618,11 +636,8 @@ export interface ExtensionAPI {
 		handler: ExtensionHandler<SessionBeforeSwitchEvent, SessionBeforeSwitchResult>,
 	): void;
 	on(event: "session_switch", handler: ExtensionHandler<SessionSwitchEvent>): void;
-	on(
-		event: "session_before_branch",
-		handler: ExtensionHandler<SessionBeforeBranchEvent, SessionBeforeBranchResult>,
-	): void;
-	on(event: "session_branch", handler: ExtensionHandler<SessionBranchEvent>): void;
+	on(event: "session_before_fork", handler: ExtensionHandler<SessionBeforeForkEvent, SessionBeforeForkResult>): void;
+	on(event: "session_fork", handler: ExtensionHandler<SessionForkEvent>): void;
 	on(
 		event: "session_before_compact",
 		handler: ExtensionHandler<SessionBeforeCompactEvent, SessionBeforeCompactResult>,
@@ -637,6 +652,7 @@ export interface ExtensionAPI {
 	on(event: "agent_end", handler: ExtensionHandler<AgentEndEvent>): void;
 	on(event: "turn_start", handler: ExtensionHandler<TurnStartEvent>): void;
 	on(event: "turn_end", handler: ExtensionHandler<TurnEndEvent>): void;
+	on(event: "model_select", handler: ExtensionHandler<ModelSelectEvent>): void;
 	on(event: "tool_call", handler: ExtensionHandler<ToolCallEvent, ToolCallEventResult>): void;
 	on(event: "tool_result", handler: ExtensionHandler<ToolResultEvent, ToolResultEventResult>): void;
 	on(event: "user_bash", handler: ExtensionHandler<UserBashEvent, UserBashEventResult>): void;
@@ -834,7 +850,7 @@ export interface ExtensionCommandContextActions {
 		parentSession?: string;
 		setup?: (sessionManager: SessionManager) => Promise<void>;
 	}) => Promise<{ cancelled: boolean }>;
-	branch: (entryId: string) => Promise<{ cancelled: boolean }>;
+	fork: (entryId: string) => Promise<{ cancelled: boolean }>;
 	navigateTree: (targetId: string, options?: { summarize?: boolean }) => Promise<{ cancelled: boolean }>;
 }
 

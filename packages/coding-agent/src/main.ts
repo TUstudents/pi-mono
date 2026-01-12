@@ -17,6 +17,7 @@ import { CONFIG_DIR_NAME, getAgentDir, getModelsPath, VERSION } from "./config.j
 import { createEventBus } from "./core/event-bus.js";
 import { exportFromFile } from "./core/export-html/index.js";
 import { discoverAndLoadExtensions, type LoadExtensionsResult, loadExtensions } from "./core/extensions/index.js";
+import { KeybindingsManager } from "./core/keybindings.js";
 import type { ModelRegistry } from "./core/model-registry.js";
 import { resolveModelScope, type ScopedModel } from "./core/model-resolver.js";
 import { type CreateAgentSessionOptions, createAgentSession, discoverAuthStorage, discoverModels } from "./core/sdk.js";
@@ -60,14 +61,14 @@ async function prepareInitialMessage(
  * Resolve a session argument to a file path.
  * If it looks like a path, use as-is. Otherwise try to match as session ID prefix.
  */
-function resolveSessionPath(sessionArg: string, cwd: string, sessionDir?: string): string {
+async function resolveSessionPath(sessionArg: string, cwd: string, sessionDir?: string): Promise<string> {
 	// If it looks like a file path, use as-is
 	if (sessionArg.includes("/") || sessionArg.includes("\\") || sessionArg.endsWith(".jsonl")) {
 		return sessionArg;
 	}
 
 	// Try to match as session ID (full or partial UUID)
-	const sessions = SessionManager.list(cwd, sessionDir);
+	const sessions = await SessionManager.list(cwd, sessionDir);
 	const matches = sessions.filter((s) => s.id.startsWith(sessionArg));
 
 	if (matches.length >= 1) {
@@ -78,12 +79,12 @@ function resolveSessionPath(sessionArg: string, cwd: string, sessionDir?: string
 	return sessionArg;
 }
 
-function createSessionManager(parsed: Args, cwd: string): SessionManager | undefined {
+async function createSessionManager(parsed: Args, cwd: string): Promise<SessionManager | undefined> {
 	if (parsed.noSession) {
 		return SessionManager.inMemory();
 	}
 	if (parsed.session) {
-		const resolvedPath = resolveSessionPath(parsed.session, cwd, parsed.sessionDir);
+		const resolvedPath = await resolveSessionPath(parsed.session, cwd, parsed.sessionDir);
 		return SessionManager.open(resolvedPath, parsed.sessionDir);
 	}
 	if (parsed.continue) {
@@ -237,6 +238,11 @@ export async function main(args: string[]) {
 		time("discoverExtensionFlags");
 	}
 
+	// Log extension loading errors
+	for (const { path, error } of extensionsResult.errors) {
+		console.error(chalk.red(`Failed to load extension "${path}": ${error}`));
+	}
+
 	// Collect all extension flags
 	const extensionFlags = new Map<string, { type: "boolean" | "string" }>();
 	for (const ext of extensionsResult.extensions) {
@@ -308,18 +314,18 @@ export async function main(args: string[]) {
 	}
 
 	// Create session manager based on CLI flags
-	let sessionManager = createSessionManager(parsed, cwd);
+	let sessionManager = await createSessionManager(parsed, cwd);
 	time("createSessionManager");
 
 	// Handle --resume: show session picker
 	if (parsed.resume) {
-		const sessions = SessionManager.list(cwd, parsed.sessionDir);
-		time("SessionManager.list");
-		if (sessions.length === 0) {
-			console.log(chalk.dim("No sessions found"));
-			return;
-		}
-		const selectedPath = await selectSession(sessions);
+		// Initialize keybindings so session picker respects user config
+		KeybindingsManager.create();
+
+		const selectedPath = await selectSession(
+			(onProgress) => SessionManager.list(cwd, parsed.sessionDir, onProgress),
+			SessionManager.listAll,
+		);
 		time("selectSession");
 		if (!selectedPath) {
 			console.log(chalk.dim("No session selected"));

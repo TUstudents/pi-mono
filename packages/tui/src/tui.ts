@@ -157,6 +157,18 @@ export class TUI extends Container {
 	}
 
 	stop(): void {
+		// Move cursor to the end of the content to prevent overwriting/artifacts on exit
+		if (this.previousLines.length > 0) {
+			const targetRow = this.previousLines.length; // Line after the last content
+			const lineDiff = targetRow - this.cursorRow;
+			if (lineDiff > 0) {
+				this.terminal.write(`\x1b[${lineDiff}B`);
+			} else if (lineDiff < 0) {
+				this.terminal.write(`\x1b[${-lineDiff}A`);
+			}
+			this.terminal.write("\r\n");
+		}
+
 		this.terminal.showCursor();
 		this.terminal.stop();
 	}
@@ -277,6 +289,11 @@ export class TUI extends Container {
 
 	private static readonly SEGMENT_RESET = "\x1b[0m\x1b]8;;\x07";
 
+	private applyLineResets(lines: string[]): string[] {
+		const reset = TUI.SEGMENT_RESET;
+		return lines.map((line) => (this.containsImage(line) ? line : line + reset));
+	}
+
 	/** Splice overlay content into a base line at a specific column. Single-pass optimized. */
 	private compositeLineAt(
 		baseLine: string,
@@ -330,6 +347,8 @@ export class TUI extends Container {
 		if (this.overlayStack.length > 0) {
 			newLines = this.compositeOverlays(newLines, width, height);
 		}
+
+		newLines = this.applyLineResets(newLines);
 
 		// Width changed - need full re-render
 		const widthChanged = this.previousWidth !== 0 && this.previousWidth !== width;
