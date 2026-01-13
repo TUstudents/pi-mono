@@ -1,5 +1,7 @@
 /**
  * Extension loader - loads TypeScript extension modules using jiti.
+ *
+ * Uses @mariozechner/jiti fork with virtualModules support for compiled Bun binaries.
  */
 
 import * as fs from "node:fs";
@@ -7,8 +9,14 @@ import { createRequire } from "node:module";
 import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
+import * as _bundledPiAi from "@cargo-cult/pi-ai";
 import type { KeyId } from "@cargo-cult/pi-tui";
-import { createJiti } from "jiti";
+import * as _bundledPiTui from "@cargo-cult/pi-tui";
+import { createJiti } from "@mariozechner/jiti";
+// Static imports of packages that extensions may use.
+// These MUST be static so Bun bundles them into the compiled binary.
+// The virtualModules option then makes them available to extensions.
+import * as _bundledTypebox from "@sinclair/typebox";
 import { getAgentDir, isBunBinary } from "../../config.js";
 import { createEventBus, type EventBus } from "../event-bus.js";
 import type { ExecOptions } from "../exec.js";
@@ -24,8 +32,28 @@ import type {
 	ToolDefinition,
 } from "./types.js";
 
+/** Modules available to extensions via virtualModules (for compiled Bun binary) */
+let _lazyPiCodingAgent: unknown;
+const VIRTUAL_MODULES: Record<string, unknown> = {
+	"@sinclair/typebox": _bundledTypebox,
+	"@cargo-cult/pi-tui": _bundledPiTui,
+	"@cargo-cult/pi-ai": _bundledPiAi,
+	// Lazy-loaded to avoid circular dependency (loader.ts is part of pi-coding-agent)
+	get "@cargo-cult/pi-coding-agent"() {
+		if (!_lazyPiCodingAgent) {
+			// Dynamic require after module initialization completes
+			_lazyPiCodingAgent = require("../../index.js");
+		}
+		return _lazyPiCodingAgent;
+	},
+};
+
 const require = createRequire(import.meta.url);
 
+/**
+ * Get aliases for jiti (used in Node.js/development mode).
+ * In Bun binary mode, virtualModules is used instead.
+ */
 let _aliases: Record<string, string> | null = null;
 function getAliases(): Record<string, string> {
 	if (_aliases) return _aliases;
@@ -38,11 +66,11 @@ function getAliases(): Record<string, string> {
 
 	_aliases = {
 		"@cargo-cult/pi-coding-agent": packageIndex,
-		"@cargo-cult/pi-coding-agent/extensions": path.resolve(__dirname, "index.js"),
 		"@cargo-cult/pi-tui": require.resolve("@cargo-cult/pi-tui"),
 		"@cargo-cult/pi-ai": require.resolve("@cargo-cult/pi-ai"),
 		"@sinclair/typebox": typeboxRoot,
 	};
+
 	return _aliases;
 }
 
@@ -86,6 +114,8 @@ export function createExtensionRuntime(): ExtensionRuntime {
 		sendMessage: notInitialized,
 		sendUserMessage: notInitialized,
 		appendEntry: notInitialized,
+		setSessionName: notInitialized,
+		getSessionName: notInitialized,
 		getActiveTools: notInitialized,
 		getAllTools: notInitialized,
 		setActiveTools: notInitialized,
@@ -169,6 +199,14 @@ function createExtensionAPI(
 			runtime.appendEntry(customType, data);
 		},
 
+		setSessionName(name: string): void {
+			runtime.setSessionName(name);
+		},
+
+		getSessionName(): string | undefined {
+			return runtime.getSessionName();
+		},
+
 		exec(command: string, args: string[], options?: ExecOptions) {
 			return execCommand(command, args, options?.cwd ?? cwd, options);
 		},
@@ -177,7 +215,7 @@ function createExtensionAPI(
 			return runtime.getActiveTools();
 		},
 
-		getAllTools(): string[] {
+		getAllTools() {
 			return runtime.getAllTools();
 		},
 
@@ -203,18 +241,15 @@ function createExtensionAPI(
 	return api;
 }
 
-async function loadBun(path: string) {
-	const module = await import(path);
-	const factory = (module.default ?? module) as ExtensionFactory;
-	return typeof factory !== "function" ? undefined : factory;
-}
-
-async function loadJiti(path: string) {
+async function loadExtensionModule(extensionPath: string) {
 	const jiti = createJiti(import.meta.url, {
-		alias: getAliases(),
+		// In Bun binary: use virtualModules for bundled packages (no filesystem resolution)
+		// Also disable tryNative so jiti handles ALL imports (not just the entry point)
+		// In Node.js/dev: use aliases to resolve to node_modules paths
+		...(isBunBinary ? { virtualModules: VIRTUAL_MODULES, tryNative: false } : { alias: getAliases() }),
 	});
 
-	const module = await jiti.import(path, { default: true });
+	const module = await jiti.import(extensionPath, { default: true });
 	const factory = module as ExtensionFactory;
 	return typeof factory !== "function" ? undefined : factory;
 }
@@ -244,7 +279,7 @@ async function loadExtension(
 	const resolvedPath = resolvePath(extensionPath, cwd);
 
 	try {
-		const factory = isBunBinary ? await loadBun(resolvedPath) : await loadJiti(resolvedPath);
+		const factory = await loadExtensionModule(resolvedPath);
 		if (!factory) {
 			return { extension: null, error: `Extension does not export a valid factory function: ${extensionPath}` };
 		}

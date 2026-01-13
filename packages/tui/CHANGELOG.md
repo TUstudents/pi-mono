@@ -2,6 +2,25 @@
 
 ## [Unreleased]
 
+## [0.45.3] - 2026-01-13
+
+## [0.45.2] - 2026-01-13
+
+## [0.45.1] - 2026-01-13
+
+## [0.45.0] - 2026-01-13
+
+## [0.44.0] - 2026-01-12
+
+### Added
+
+- `SettingsListOptions` with `enableSearch` for fuzzy filtering in `SettingsList` ([#643](https://github.com/TUstudents/pi-mono/pull/643) by [@ninlds](https://github.com/ninlds))
+- `pageUp` and `pageDown` key support with `selectPageUp`/`selectPageDown` editor actions ([#662](https://github.com/TUstudents/pi-mono/pull/662) by [@aliou](https://github.com/aliou))
+
+### Fixed
+
+- Numbered list items showing "1." for all items when code blocks break list continuity ([#660](https://github.com/TUstudents/pi-mono/pull/660) by [@ogulcancelik](https://github.com/ogulcancelik))
+
 ## [0.43.0] - 2026-01-11
 
 ### Added

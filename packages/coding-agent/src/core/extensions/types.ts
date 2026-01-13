@@ -722,14 +722,24 @@ export interface ExtensionAPI {
 	/** Append a custom entry to the session for state persistence (not sent to LLM). */
 	appendEntry<T = unknown>(customType: string, data?: T): void;
 
+	// =========================================================================
+	// Session Metadata
+	// =========================================================================
+
+	/** Set the session display name (shown in session selector). */
+	setSessionName(name: string): void;
+
+	/** Get the current session name, if set. */
+	getSessionName(): string | undefined;
+
 	/** Execute a shell command. */
 	exec(command: string, args: string[], options?: ExecOptions): Promise<ExecResult>;
 
 	/** Get the list of currently active tool names. */
 	getActiveTools(): string[];
 
-	/** Get all configured tools (built-in + extension tools). */
-	getAllTools(): string[];
+	/** Get all configured tools with name and description. */
+	getAllTools(): ToolInfo[];
 
 	/** Set the active tools by name. */
 	setActiveTools(toolNames: string[]): void;
@@ -792,9 +802,16 @@ export type SendUserMessageHandler = (
 
 export type AppendEntryHandler = <T = unknown>(customType: string, data?: T) => void;
 
+export type SetSessionNameHandler = (name: string) => void;
+
+export type GetSessionNameHandler = () => string | undefined;
+
 export type GetActiveToolsHandler = () => string[];
 
-export type GetAllToolsHandler = () => string[];
+/** Tool info with name and description */
+export type ToolInfo = Pick<ToolDefinition, "name" | "description">;
+
+export type GetAllToolsHandler = () => ToolInfo[];
 
 export type SetActiveToolsHandler = (toolNames: string[]) => void;
 
@@ -820,6 +837,8 @@ export interface ExtensionActions {
 	sendMessage: SendMessageHandler;
 	sendUserMessage: SendUserMessageHandler;
 	appendEntry: AppendEntryHandler;
+	setSessionName: SetSessionNameHandler;
+	getSessionName: GetSessionNameHandler;
 	getActiveTools: GetActiveToolsHandler;
 	getAllTools: GetAllToolsHandler;
 	setActiveTools: SetActiveToolsHandler;

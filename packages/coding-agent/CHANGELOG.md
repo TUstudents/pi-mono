@@ -2,6 +2,58 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Light theme colors adjusted for WCAG AA compliance (4.5:1 contrast ratio against white backgrounds)
+
+### Added
+
+- Extension example: `summarize.ts` for summarizing conversations using custom UI and an external model
+- Vercel AI Gateway provider support: set `AI_GATEWAY_API_KEY` and use `--provider vercel-ai-gateway` ([#689](https://github.com/TUstudents/pi-mono/pull/689) by [@timolins](https://github.com/timolins))
+
+## [0.45.3] - 2026-01-13
+
+## [0.45.2] - 2026-01-13
+
+### Fixed
+
+- Extensions now load correctly in compiled Bun binary using `@mariozechner/jiti` fork with `virtualModules` support. Bundled packages (`@sinclair/typebox`, `@cargo-cult/pi-tui`, `@cargo-cult/pi-ai`, `@cargo-cult/pi-coding-agent`) are accessible to extensions without filesystem node_modules.
+
+## [0.45.1] - 2026-01-13
+
+### Changed
+
+- `/share` now outputs `buildwithpi.ai` session preview URLs instead of `shittycodingagent.ai`
+
+## [0.45.0] - 2026-01-13
+
+### Added
+
+- MiniMax provider support: set `MINIMAX_API_KEY` and use `minimax/MiniMax-M2.1` ([#656](https://github.com/TUstudents/pi-mono/pull/656) by [@dannote](https://github.com/dannote))
+- `/scoped-models`: Alt+Up/Down to reorder enabled models. Order is preserved when saving with Ctrl+S and determines Ctrl+P cycling order. ([#676](https://github.com/TUstudents/pi-mono/pull/676) by [@thomasmhr](https://github.com/thomasmhr))
+- Amazon Bedrock provider support (experimental, tested with Anthropic Claude models only) ([#494](https://github.com/TUstudents/pi-mono/pull/494) by [@unexge](https://github.com/unexge))
+- Extension example: `sandbox/` for OS-level bash sandboxing using `@anthropic-ai/sandbox-runtime` with per-project config ([#673](https://github.com/TUstudents/pi-mono/pull/673) by [@dannote](https://github.com/dannote))
+- Print mode JSON output now emits the session header as the first line.
+
+## [0.44.0] - 2026-01-12
+
+### Breaking Changes
+
+- `pi.getAllTools()` now returns `ToolInfo[]` (with `name` and `description`) instead of `string[]`. Extensions that only need names can use `.map(t => t.name)`. ([#648](https://github.com/TUstudents/pi-mono/pull/648) by [@carsonfarmer](https://github.com/carsonfarmer))
+
+### Added
+
+- Session naming: `/name <name>` command sets a display name shown in the session selector instead of the first message. Useful for distinguishing forked sessions. Extensions can use `pi.setSessionName()` and `pi.getSessionName()`. ([#650](https://github.com/TUstudents/pi-mono/pull/650) by [@scutifer](https://github.com/scutifer))
+- Extension example: `notify.ts` for desktop notifications via OSC 777 escape sequence ([#658](https://github.com/TUstudents/pi-mono/pull/658) by [@ferologics](https://github.com/ferologics))
+- Inline hint for queued messages showing the `Alt+Up` restore shortcut ([#657](https://github.com/TUstudents/pi-mono/pull/657) by [@tmustier](https://github.com/tmustier))
+- Page-up/down navigation in `/resume` session selector to jump by 5 items ([#662](https://github.com/TUstudents/pi-mono/pull/662) by [@aliou](https://github.com/aliou))
+- Fuzzy search in `/settings` menu: type to filter settings by label ([#643](https://github.com/TUstudents/pi-mono/pull/643) by [@ninlds](https://github.com/ninlds))
+
+### Fixed
+
+- Session selector now stays open when current folder has no sessions, allowing Tab to switch to "all" scope ([#661](https://github.com/TUstudents/pi-mono/pull/661) by [@aliou](https://github.com/aliou))
+- Extensions using theme utilities like `getSettingsListTheme()` now work in dev mode with tsx
+
 ## [0.43.0] - 2026-01-11
 
 ### Breaking Changes
@@ -29,6 +81,7 @@
 
 ### Fixed
 
+- Missing spacer between assistant message and text editor ([#655](https://github.com/TUstudents/pi-mono/issues/655))
 - Session picker respects custom keybindings when using `--resume` ([#633](https://github.com/TUstudents/pi-mono/pull/633) by [@aos](https://github.com/aos))
 - Custom footer extensions now see model changes: `ctx.model` is now a getter that returns the current model instead of a snapshot from when the context was created ([#634](https://github.com/TUstudents/pi-mono/pull/634) by [@ogulcancelik](https://github.com/ogulcancelik))
 - Footer git branch not updating after external branch switches. Git uses atomic writes (temp file + rename), which changes the inode and breaks `fs.watch` on the file. Now watches the directory instead.
