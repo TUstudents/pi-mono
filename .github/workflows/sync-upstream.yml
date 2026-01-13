@@ -155,6 +155,7 @@ jobs:
         run: git push origin main
 
       - name: Create release tag
+        id: tags
         if: steps.merge.outputs.merge_status == 'success' || steps.merge.outputs.merge_status == 'resolved'
         run: |
           # Get current version from package.json
@@ -162,6 +163,7 @@ jobs:
           TAG_NAME="v${VERSION}-sync.$(date +%Y%m%d%H%M%S)"
           git tag "$TAG_NAME"
           git push origin "$TAG_NAME"
+          echo "new_tag=$TAG_NAME" >> $GITHUB_OUTPUT
           echo "Created and pushed tag: $TAG_NAME"
 
       - name: Trigger npm publish for new tag
@@ -170,10 +172,11 @@ jobs:
         with:
           github-token: ${{ secrets.SYNC_TOKEN }}
           script: |
+            const tag = '${{ steps.tags.outputs.new_tag }}';
+            console.log('Triggering npm publish for tag:', tag);
             await github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
               repo: context.repo.repo,
               workflow_id: 'npm-publish.yml',
-              ref: '${{ steps.tags.outputs.new_tag }}'
+              ref: tag
             });
-            console.log('Triggered npm publish for tag: ${{ steps.tags.outputs.new_tag }}');
