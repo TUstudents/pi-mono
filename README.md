@@ -1,5 +1,7 @@
 # Pi Monorepo
 
+[![Sync Upstream](https://github.com/TUstudents/pi-mono/actions/workflows/sync-upstream.yml/badge.svg)](https://github.com/TUstudents/pi-mono/actions/workflows/sync-upstream.yml)
+
 A fork of [badlogic/pi-mono](https://github.com/badlogic/pi-mono) by [Mario Zechner](https://github.com/badlogic).
 
 Tools for building AI agents and managing LLM deployments.
