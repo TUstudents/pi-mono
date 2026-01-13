@@ -5,15 +5,20 @@
 ### Changed
 
 - Light theme colors adjusted for WCAG AA compliance (4.5:1 contrast ratio against white backgrounds)
+- Replaced `sharp` with `wasm-vips` for image processing (resize, PNG conversion). Eliminates native build requirements that caused installation failures on some systems. ([#696](https://github.com/TUstudents/pi-mono/issues/696))
 
 ### Added
 
-- Extension example: `summarize.ts` for summarizing conversations using custom UI and an external model
+- Extension example: `summarize.ts` for summarizing conversations using custom UI and an external model ([#684](https://github.com/TUstudents/pi-mono/pull/684) by [@scutifer](https://github.com/scutifer))
+- Extension example: `question.ts` enhanced with custom UI for asking user questions ([#693](https://github.com/TUstudents/pi-mono/pull/693) by [@ferologics](https://github.com/ferologics))
+- Extension example: `plan-mode/` enhanced with explicit step tracking and progress widget ([#694](https://github.com/TUstudents/pi-mono/pull/694) by [@ferologics](https://github.com/ferologics))
+- Extension example: `questionnaire.ts` for multi-question input with tab bar navigation ([#695](https://github.com/TUstudents/pi-mono/pull/695) by [@ferologics](https://github.com/ferologics))
 - Experimental Vercel AI Gateway provider support: set `AI_GATEWAY_API_KEY` and use `--provider vercel-ai-gateway`. Token usage is currently reported incorrectly by Anthropic Messages compatible endpoint. ([#689](https://github.com/TUstudents/pi-mono/pull/689) by [@timolins](https://github.com/timolins))
 
 ### Fixed
 
 - Fix API key resolution after model switches by using provider argument ([#691](https://github.com/TUstudents/pi-mono/pull/691) by [@joshp123](https://github.com/joshp123))
+- Fixed z.ai thinking/reasoning: thinking toggle now correctly enables/disables thinking for z.ai models ([#688](https://github.com/TUstudents/pi-mono/issues/688))
 
 ## [0.45.3] - 2026-01-13
 
