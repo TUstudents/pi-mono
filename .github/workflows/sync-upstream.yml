@@ -114,6 +114,7 @@ jobs:
             -e 's/@mariozechner\/pi-mom/@cargo-cult\/pi-mom/g' \
             -e 's/@mariozechner\/pi-web-ui/@cargo-cult\/pi-web-ui/g' \
             -e 's/"@mariozechner\/pi"/"@cargo-cult\/pi"/g' \
+            -e 's/-w @mariozechner\/pi"/-w @cargo-cult\/pi"/g' \
             -e 's/badlogic\/pi-mono/TUstudents\/pi-mono/g' \
             package.json tsconfig.json scripts/sync-versions.js 2>/dev/null || true
 
