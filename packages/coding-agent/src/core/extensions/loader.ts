@@ -9,6 +9,7 @@ import { createRequire } from "node:module";
 import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
+import * as _bundledPiAgentCore from "@cargo-cult/pi-agent-core";
 import * as _bundledPiAi from "@cargo-cult/pi-ai";
 import type { KeyId } from "@cargo-cult/pi-tui";
 import * as _bundledPiTui from "@cargo-cult/pi-tui";
@@ -18,6 +19,9 @@ import { createJiti } from "@mariozechner/jiti";
 // The virtualModules option then makes them available to extensions.
 import * as _bundledTypebox from "@sinclair/typebox";
 import { getAgentDir, isBunBinary } from "../../config.js";
+// NOTE: This import works because loader.ts exports are NOT re-exported from index.ts,
+// avoiding a circular dependency. Extensions can import from @cargo-cult/pi-coding-agent.
+import * as _bundledPiCodingAgent from "../../index.js";
 import { createEventBus, type EventBus } from "../event-bus.js";
 import type { ExecOptions } from "../exec.js";
 import { execCommand } from "../exec.js";
@@ -33,19 +37,12 @@ import type {
 } from "./types.js";
 
 /** Modules available to extensions via virtualModules (for compiled Bun binary) */
-let _lazyPiCodingAgent: unknown;
 const VIRTUAL_MODULES: Record<string, unknown> = {
 	"@sinclair/typebox": _bundledTypebox,
+	"@cargo-cult/pi-agent-core": _bundledPiAgentCore,
 	"@cargo-cult/pi-tui": _bundledPiTui,
 	"@cargo-cult/pi-ai": _bundledPiAi,
-	// Lazy-loaded to avoid circular dependency (loader.ts is part of pi-coding-agent)
-	get "@cargo-cult/pi-coding-agent"() {
-		if (!_lazyPiCodingAgent) {
-			// Dynamic require after module initialization completes
-			_lazyPiCodingAgent = require("../../index.js");
-		}
-		return _lazyPiCodingAgent;
-	},
+	"@cargo-cult/pi-coding-agent": _bundledPiCodingAgent,
 };
 
 const require = createRequire(import.meta.url);
@@ -66,6 +63,7 @@ function getAliases(): Record<string, string> {
 
 	_aliases = {
 		"@cargo-cult/pi-coding-agent": packageIndex,
+		"@cargo-cult/pi-agent-core": require.resolve("@cargo-cult/pi-agent-core"),
 		"@cargo-cult/pi-tui": require.resolve("@cargo-cult/pi-tui"),
 		"@cargo-cult/pi-ai": require.resolve("@cargo-cult/pi-ai"),
 		"@sinclair/typebox": typeboxRoot,

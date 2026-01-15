@@ -10,7 +10,15 @@
 
 import type { AgentMessage, AgentToolResult, AgentToolUpdateCallback, ThinkingLevel } from "@cargo-cult/pi-agent-core";
 import type { ImageContent, Model, TextContent, ToolResultMessage } from "@cargo-cult/pi-ai";
-import type { Component, EditorComponent, EditorTheme, KeyId, TUI } from "@cargo-cult/pi-tui";
+import type {
+	Component,
+	EditorComponent,
+	EditorTheme,
+	KeyId,
+	OverlayHandle,
+	OverlayOptions,
+	TUI,
+} from "@cargo-cult/pi-tui";
 import type { Static, TSchema } from "@sinclair/typebox";
 import type { Theme } from "../../modes/interactive/theme/theme.js";
 import type { BashResult } from "../bash-executor.js";
@@ -107,7 +115,13 @@ export interface ExtensionUIContext {
 			keybindings: KeybindingsManager,
 			done: (result: T) => void,
 		) => (Component & { dispose?(): void }) | Promise<Component & { dispose?(): void }>,
-		options?: { overlay?: boolean },
+		options?: {
+			overlay?: boolean;
+			/** Overlay positioning/sizing options. Can be static or a function for dynamic updates. */
+			overlayOptions?: OverlayOptions | (() => OverlayOptions);
+			/** Called with the overlay handle after the overlay is shown. Use to control visibility. */
+			onHandle?: (handle: OverlayHandle) => void;
+		},
 	): Promise<T>;
 
 	/** Set the text in the core input editor. */

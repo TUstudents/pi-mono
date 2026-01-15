@@ -2,6 +2,27 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed signature support for non-Anthropic models in Amazon Bedrock provider ([#727](https://github.com/TUstudents/pi-mono/pull/727) by [@unexge](https://github.com/unexge))
+
+## [0.45.7] - 2026-01-13
+
+### Fixed
+
+- Fixed OpenAI Responses timeout option handling ([#706](https://github.com/TUstudents/pi-mono/pull/706) by [@markusylisiurunen](https://github.com/markusylisiurunen))
+- Fixed Bedrock tool call conversion to apply message transforms ([#707](https://github.com/TUstudents/pi-mono/pull/707) by [@pjtf93](https://github.com/pjtf93))
+
+## [0.45.6] - 2026-01-13
+
+### Fixed
+
+- Export `parseStreamingJson` from main package for tsx dev mode compatibility
+
+## [0.45.5] - 2026-01-13
+
+## [0.45.4] - 2026-01-13
+
 ### Added
 
 - Added Vercel AI Gateway provider with model discovery and `AI_GATEWAY_API_KEY` env support ([#689](https://github.com/TUstudents/pi-mono/pull/689) by [@timolins](https://github.com/timolins))
