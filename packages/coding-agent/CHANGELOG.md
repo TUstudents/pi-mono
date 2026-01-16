@@ -2,21 +2,64 @@
 
 ## [Unreleased]
 
+## [0.47.0] - 2026-01-16
+
+### Breaking Changes
+
+- Extensions using `Editor` directly must now pass `TUI` as the first constructor argument: `new Editor(tui, theme)`. The `tui` parameter is available in extension factory functions. ([#732](https://github.com/TUstudents/pi-mono/issues/732))
+
+### Added
+
+- **OpenAI Codex official support**: Full compatibility with OpenAI's Codex CLI models (`gpt-5.1`, `gpt-5.2`, `gpt-5.1-codex-mini`, `gpt-5.2-codex`). Features include static system prompt for OpenAI allowlisting, prompt caching via session ID, and reasoning signature retention across turns. Set `OPENAI_API_KEY` and use `--provider openai-codex` or select a Codex model. ([#737](https://github.com/TUstudents/pi-mono/pull/737))
+- `pi-internal://` URL scheme in read tool for accessing internal documentation. The model can read files from the coding-agent package (README, docs, examples) to learn about extending pi.
+- New `input` event in extension system for intercepting, transforming, or handling user input before the agent processes it. Supports three result types: `continue` (pass through), `transform` (modify text/images), `handled` (respond without LLM). Handlers chain transforms and short-circuit on handled. ([#761](https://github.com/TUstudents/pi-mono/pull/761) by [@nicobailon](https://github.com/nicobailon))
+- Extension example: `input-transform.ts` demonstrating input interception patterns (quick mode, instant commands, source routing) ([#761](https://github.com/TUstudents/pi-mono/pull/761) by [@nicobailon](https://github.com/nicobailon))
+- Custom tool HTML export: extensions with `renderCall`/`renderResult` now render in `/share` and `/export` output with ANSI-to-HTML color conversion ([#702](https://github.com/TUstudents/pi-mono/pull/702) by [@aliou](https://github.com/aliou))
+- Direct filter shortcuts in Tree mode: Ctrl+D (default), Ctrl+T (no-tools), Ctrl+U (user-only), Ctrl+L (labeled-only), Ctrl+A (all) ([#747](https://github.com/TUstudents/pi-mono/pull/747) by [@kaofelix](https://github.com/kaofelix))
+
+### Changed
+
+- Skill commands (`/skill:name`) are now expanded in AgentSession instead of interactive mode. This enables skill commands in RPC and print modes, and allows the `input` event to intercept `/skill:name` before expansion.
+
 ### Fixed
 
+- Editor no longer corrupts terminal display when loading large prompts via `setEditorText`. Content now scrolls vertically with indicators showing lines above/below the viewport. ([#732](https://github.com/TUstudents/pi-mono/issues/732))
+- Piped stdin now works correctly: `echo foo | pi` is equivalent to `pi -p foo`. When stdin is piped, print mode is automatically enabled since interactive mode requires a TTY ([#708](https://github.com/TUstudents/pi-mono/issues/708))
+- Session tree now preserves branch connectors and indentation when filters hide intermediate entries so descendants attach to the nearest visible ancestor and sibling branches align. Fixed in both TUI and HTML export ([#739](https://github.com/TUstudents/pi-mono/pull/739) by [@w-winter](https://github.com/w-winter))
+- Added `upstream connect`, `connection refused`, and `reset before headers` patterns to auto-retry error detection ([#733](https://github.com/TUstudents/pi-mono/issues/733))
+- Multi-line YAML frontmatter in skills and prompt templates now parses correctly. Centralized frontmatter parsing using the `yaml` library. ([#728](https://github.com/TUstudents/pi-mono/pull/728) by [@richardgill](https://github.com/richardgill))
+- `ctx.shutdown()` now waits for pending UI renders to complete before exiting, ensuring notifications and final output are visible ([#756](https://github.com/TUstudents/pi-mono/issues/756))
+- OpenAI Codex provider now retries on transient errors (429, 5xx, connection failures) with exponential backoff ([#733](https://github.com/TUstudents/pi-mono/issues/733))
+
+## [0.46.0] - 2026-01-15
+
+### Fixed
+
+- Scoped models (`--models` or `enabledModels`) now remember the last selected model across sessions instead of always starting with the first model in the scope ([#736](https://github.com/TUstudents/pi-mono/pull/736) by [@ogulcancelik](https://github.com/ogulcancelik))
 - Show `bun install` instead of `npm install` in update notification when running under Bun ([#714](https://github.com/TUstudents/pi-mono/pull/714) by [@dannote](https://github.com/dannote))
 - `/skill` prompts now include the skill path ([#711](https://github.com/TUstudents/pi-mono/pull/711) by [@jblwilliams](https://github.com/jblwilliams))
 - Use configurable `expandTools` keybinding instead of hardcoded Ctrl+O ([#717](https://github.com/TUstudents/pi-mono/pull/717) by [@dannote](https://github.com/dannote))
+- Compaction turn prefix summaries now merge correctly ([#738](https://github.com/TUstudents/pi-mono/pull/738) by [@vsabavat](https://github.com/vsabavat))
+- Avoid unsigned Gemini 3 tool calls ([#741](https://github.com/TUstudents/pi-mono/pull/741) by [@roshanasingh4](https://github.com/roshanasingh4))
+- Fixed signature support for non-Anthropic models in Amazon Bedrock provider ([#727](https://github.com/TUstudents/pi-mono/pull/727) by [@unexge](https://github.com/unexge))
+- Keyboard shortcuts (Ctrl+C, Ctrl+D, etc.) now work on non-Latin keyboard layouts (Russian, Ukrainian, Bulgarian, etc.) in terminals supporting Kitty keyboard protocol with alternate key reporting ([#718](https://github.com/TUstudents/pi-mono/pull/718) by [@dannote](https://github.com/dannote))
 
 ### Added
 
 - Edit tool now uses fuzzy matching as fallback when exact match fails, tolerating trailing whitespace, smart quotes, Unicode dashes, and special spaces ([#713](https://github.com/TUstudents/pi-mono/pull/713) by [@dannote](https://github.com/dannote))
 - Support `APPEND_SYSTEM.md` to append instructions to the system prompt ([#716](https://github.com/TUstudents/pi-mono/pull/716) by [@tallshort](https://github.com/tallshort))
 - Session picker search: Ctrl+R toggles sorting between fuzzy match (default) and most recent; supports quoted phrase matching and `re:` regex mode ([#731](https://github.com/TUstudents/pi-mono/pull/731) by [@ogulcancelik](https://github.com/ogulcancelik))
+- Export `getAgentDir` for extensions ([#749](https://github.com/TUstudents/pi-mono/pull/749) by [@dannote](https://github.com/dannote))
+- Show loaded prompt templates on startup ([#743](https://github.com/TUstudents/pi-mono/pull/743) by [@tallshort](https://github.com/tallshort))
+- MiniMax China (`minimax-cn`) provider support ([#725](https://github.com/TUstudents/pi-mono/pull/725) by [@tallshort](https://github.com/tallshort))
+- `gpt-5.2-codex` models for GitHub Copilot and OpenCode Zen providers ([#734](https://github.com/TUstudents/pi-mono/pull/734) by [@aadishv](https://github.com/aadishv))
 
 ### Changed
 
 - Replaced `wasm-vips` with `@silvia-odwyer/photon-node` for image processing ([#710](https://github.com/TUstudents/pi-mono/pull/710) by [@can1357](https://github.com/can1357))
+- Extension example: `plan-mode/` shortcut changed from Shift+P to Ctrl+Alt+P to avoid conflict with typing capital P ([#746](https://github.com/TUstudents/pi-mono/pull/746) by [@ferologics](https://github.com/ferologics))
+- UI keybinding hints now respect configured keybindings across components ([#724](https://github.com/TUstudents/pi-mono/pull/724) by [@dannote](https://github.com/dannote))
+- CLI process title is now set to `pi` for easier process identification ([#742](https://github.com/TUstudents/pi-mono/pull/742) by [@richardgill](https://github.com/richardgill))
 
 ## [0.45.7] - 2026-01-13
 

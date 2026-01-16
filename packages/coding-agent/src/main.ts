@@ -5,7 +5,7 @@
  * createAgentSession() options. The SDK does the heavy lifting.
  */
 
-import { type ImageContent, supportsXhigh } from "@cargo-cult/pi-ai";
+import { type ImageContent, modelsAreEqual, supportsXhigh } from "@cargo-cult/pi-ai";
 import chalk from "chalk";
 import { existsSync } from "fs";
 import { join } from "path";
@@ -29,6 +29,29 @@ import { allTools } from "./core/tools/index.js";
 import { runMigrations, showDeprecationWarnings } from "./migrations.js";
 import { InteractiveMode, runPrintMode, runRpcMode } from "./modes/index.js";
 import { initTheme, stopThemeWatcher } from "./modes/interactive/theme/theme.js";
+
+/**
+ * Read all content from piped stdin.
+ * Returns undefined if stdin is a TTY (interactive terminal).
+ */
+async function readPipedStdin(): Promise<string | undefined> {
+	// If stdin is a TTY, we're running interactively - don't read stdin
+	if (process.stdin.isTTY) {
+		return undefined;
+	}
+
+	return new Promise((resolve) => {
+		let data = "";
+		process.stdin.setEncoding("utf8");
+		process.stdin.on("data", (chunk) => {
+			data += chunk;
+		});
+		process.stdin.on("end", () => {
+			resolve(data.trim() || undefined);
+		});
+		process.stdin.resume();
+	});
+}
 
 async function prepareInitialMessage(
 	parsed: Args,
@@ -164,16 +187,30 @@ function buildSessionOptions(
 		}
 		options.model = model;
 	} else if (scopedModels.length > 0 && !parsed.continue && !parsed.resume) {
-		options.model = scopedModels[0].model;
+		// Check if saved default is in scoped models - use it if so, otherwise first scoped model
+		const savedProvider = settingsManager.getDefaultProvider();
+		const savedModelId = settingsManager.getDefaultModel();
+		const savedModel = savedProvider && savedModelId ? modelRegistry.find(savedProvider, savedModelId) : undefined;
+		const savedInScope = savedModel ? scopedModels.find((sm) => modelsAreEqual(sm.model, savedModel)) : undefined;
+
+		if (savedInScope) {
+			options.model = savedInScope.model;
+			// Use thinking level from scoped model config if explicitly set
+			if (!parsed.thinking && savedInScope.thinkingLevel) {
+				options.thinkingLevel = savedInScope.thinkingLevel;
+			}
+		} else {
+			options.model = scopedModels[0].model;
+			// Use thinking level from first scoped model if explicitly set
+			if (!parsed.thinking && scopedModels[0].thinkingLevel) {
+				options.thinkingLevel = scopedModels[0].thinkingLevel;
+			}
+		}
 	}
 
-	// Thinking level
-	// Only use scoped model's thinking level if it was explicitly specified (e.g., "model:high")
-	// Otherwise, let the SDK use defaultThinkingLevel from settings
+	// Thinking level from CLI (takes precedence over scoped model thinking levels set above)
 	if (parsed.thinking) {
 		options.thinkingLevel = parsed.thinking;
-	} else if (scopedModels.length > 0 && scopedModels[0].thinkingLevel && !parsed.continue && !parsed.resume) {
-		options.thinkingLevel = scopedModels[0].thinkingLevel;
 	}
 
 	// Scoped models for Ctrl+P cycling - fill in default thinking level for models without explicit level
@@ -294,6 +331,18 @@ export async function main(args: string[]) {
 		const searchPattern = typeof parsed.listModels === "string" ? parsed.listModels : undefined;
 		await listModels(modelRegistry, searchPattern);
 		return;
+	}
+
+	// Read piped stdin content (if any) - skip for RPC mode which uses stdin for JSON-RPC
+	if (parsed.mode !== "rpc") {
+		const stdinContent = await readPipedStdin();
+		if (stdinContent !== undefined) {
+			// Force print mode since interactive mode requires a TTY for keyboard input
+			parsed.print = true;
+			// Prepend stdin content to messages
+			parsed.messages.unshift(stdinContent);
+		}
+		time("readPipedStdin");
 	}
 
 	if (parsed.export) {
